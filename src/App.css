@@ -1,0 +1,42 @@
+#root {
+  min-height: 100vh;
+}
+
+.equipment-app {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 32px;
+}
+
+.equipment-header {
+  margin-bottom: 32px;
+}
+
+.equipment-kicker {
+  margin: 0 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  opacity: 0.65;
+}
+
+.equipment-header h1 {
+  margin: 0;
+  font-size: 36px;
+}
+
+.equipment-subtitle {
+  max-width: 720px;
+  margin: 10px 0 0;
+  opacity: 0.72;
+}
+
+.equipment-empty-state {
+  padding: 24px;
+  border: 1px solid currentColor;
+  border-radius: 12px;
+}
+
+.equipment-empty-state h2 {
+  margin-top: 0;
+}
