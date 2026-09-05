@@ -8,6 +8,10 @@ import {
   discoverSamsungDevices,
 } from './providers/samsung/SamsungDiscovery.js'
 
+import {
+  testSamsungMenu,
+} from './providers/samsung/SamsungRemote.js'
+
 const HOST = '127.0.0.1'
 
 const PORT = Number.parseInt(
@@ -80,6 +84,86 @@ const server = createServer(
       return
     }
 
+    if (
+      request.method === 'POST' &&
+      request.url ===
+        '/providers/samsung/test-menu'
+    ) {
+      try {
+        const body =
+          await readJsonBody(
+            request,
+          )
+
+        if (
+          typeof body !== 'object' ||
+          body === null
+        ) {
+          sendJson(
+            response,
+            400,
+            {
+              error:
+                'Request body must be an object.',
+            },
+          )
+
+          return
+        }
+
+        const candidate =
+          body as Record<
+            string,
+            unknown
+          >
+
+        if (
+          typeof candidate.address !==
+          'string'
+        ) {
+          sendJson(
+            response,
+            400,
+            {
+              error:
+                'Samsung device address is required.',
+            },
+          )
+
+          return
+        }
+
+        const result =
+          await testSamsungMenu(
+            candidate.address,
+          )
+
+        sendJson(
+          response,
+          200,
+          result,
+        )
+      } catch (error) {
+        console.error(
+          'Samsung menu test failed:',
+          error,
+        )
+
+        sendJson(
+          response,
+          500,
+          {
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Samsung menu test failed.',
+          },
+        )
+      }
+
+      return
+    }
+
     sendJson(
       response,
       404,
@@ -100,6 +184,33 @@ server.listen(
   },
 )
 
+async function readJsonBody(
+  request: IncomingMessage,
+): Promise<unknown> {
+  const chunks: Buffer[] = []
+
+  for await (
+    const chunk of request
+  ) {
+    chunks.push(
+      Buffer.isBuffer(chunk)
+        ? chunk
+        : Buffer.from(chunk),
+    )
+  }
+
+  if (chunks.length === 0) {
+    return null
+  }
+
+  const text =
+    Buffer.concat(
+      chunks,
+    ).toString('utf8')
+
+  return JSON.parse(text) as unknown
+}
+
 function sendJson(
   response: ServerResponse,
   statusCode: number,
@@ -112,11 +223,11 @@ function sendJson(
         'application/json; charset=utf-8',
 
       /*
-       * Discovery is currently read-only.
+       * These endpoints are still local-only.
        *
        * We will introduce stricter runtime
-       * authorization before privileged
-       * device-control endpoints exist.
+       * authorization before this becomes
+       * production-grade privileged control.
        */
       'Access-Control-Allow-Origin': '*',
     },
