@@ -4,6 +4,10 @@ import {
 } from 'react'
 
 import {
+  testSamsungMenu,
+} from '../runtime/EquipmentRuntimeClient'
+
+import {
   discoverDevices,
 } from './DiscoveryCoordinator'
 
@@ -38,6 +42,16 @@ function DiscoveryDialog({
     setScanCompleted,
   ] = useState(false)
 
+  const [
+    testingDeviceKey,
+    setTestingDeviceKey,
+  ] = useState<string | null>(null)
+
+  const [
+    testMessages,
+    setTestMessages,
+  ] = useState<Record<string, string>>({})
+
   useEffect(() => {
     if (!isOpen) return
 
@@ -47,7 +61,10 @@ function DiscoveryDialog({
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener(
+      'keydown',
+      handleKeyDown,
+    )
 
     return () => {
       window.removeEventListener(
@@ -66,6 +83,8 @@ function DiscoveryDialog({
     setProviderStates([])
     setDiscoveredDevices([])
     setScanCompleted(false)
+    setTestingDeviceKey(null)
+    setTestMessages({})
   }, [isOpen])
 
   if (!isOpen) {
@@ -75,7 +94,10 @@ function DiscoveryDialog({
   function handleBackdropPointerDown(
     event: React.PointerEvent<HTMLDivElement>,
   ) {
-    if (event.target === event.currentTarget) {
+    if (
+      event.target ===
+      event.currentTarget
+    ) {
       onClose()
     }
   }
@@ -89,37 +111,125 @@ function DiscoveryDialog({
     setScanCompleted(false)
     setProviderStates([])
     setDiscoveredDevices([])
+    setTestingDeviceKey(null)
+    setTestMessages({})
 
     try {
-      const result = await discoverDevices(
-        (providerState) => {
-          setProviderStates((current) => {
-            const existingIndex = current.findIndex(
-              (state) =>
-                state.providerId ===
-                providerState.providerId,
+      const result =
+        await discoverDevices(
+          (providerState) => {
+            setProviderStates(
+              (current) => {
+                const existingIndex =
+                  current.findIndex(
+                    (state) =>
+                      state.providerId ===
+                      providerState.providerId,
+                  )
+
+                if (
+                  existingIndex < 0
+                ) {
+                  return [
+                    ...current,
+                    providerState,
+                  ]
+                }
+
+                const next =
+                  [...current]
+
+                next[existingIndex] =
+                  providerState
+
+                return next
+              },
             )
+          },
+        )
 
-            if (existingIndex < 0) {
-              return [
-                ...current,
-                providerState,
-              ]
-            }
-
-            const next = [...current]
-            next[existingIndex] = providerState
-
-            return next
-          })
-        },
+      setProviderStates(
+        result.providers,
       )
 
-      setProviderStates(result.providers)
-      setDiscoveredDevices(result.devices)
+      setDiscoveredDevices(
+        result.devices,
+      )
+
       setScanCompleted(true)
     } finally {
       setIsScanning(false)
+    }
+  }
+
+  async function handleSamsungMenuTest(
+    device: DiscoveredDevice,
+    index: number,
+  ) {
+    if (
+      device.providerId !==
+      'samsung'
+    ) {
+      return
+    }
+
+    if (!device.address) {
+      return
+    }
+
+    const deviceKey =
+      createDeviceKey(
+        device,
+        index,
+      )
+
+    if (
+      testingDeviceKey !== null
+    ) {
+      return
+    }
+
+    setTestingDeviceKey(
+      deviceKey,
+    )
+
+    setTestMessages(
+      (current) => ({
+        ...current,
+        [deviceKey]:
+          'Connecting to TV. Watch the television for an authorization prompt...',
+      }),
+    )
+
+    try {
+      const result =
+        await testSamsungMenu(
+          device.address,
+        )
+
+      setTestMessages(
+        (current) => ({
+          ...current,
+          [deviceKey]:
+            result.authorized
+              ? 'Command sent. The Samsung menu should now be visible.'
+              : 'The TV connected, but authorization was not completed.',
+        }),
+      )
+    } catch (error) {
+      setTestMessages(
+        (current) => ({
+          ...current,
+          [deviceKey]:
+            error instanceof Error
+              ? error.message
+              : 'Samsung menu test failed.',
+        }),
+      )
+    } finally {
+      setTestingDeviceKey(
+        null,
+      )
     }
   }
 
@@ -127,7 +237,9 @@ function DiscoveryDialog({
     <div
       className="discovery-backdrop"
       role="presentation"
-      onPointerDown={handleBackdropPointerDown}
+      onPointerDown={
+        handleBackdropPointerDown
+      }
     >
       <section
         className="discovery-dialog"
@@ -160,7 +272,8 @@ function DiscoveryDialog({
         <div className="discovery-dialog-content">
           {!isScanning &&
             !scanCompleted &&
-            providerStates.length === 0 && (
+            providerStates.length ===
+              0 && (
               <div className="discovery-idle-state">
                 <p>
                   Equipment will ask each available device
@@ -171,7 +284,9 @@ function DiscoveryDialog({
                 <button
                   type="button"
                   className="equipment-primary-button"
-                  onClick={handleScan}
+                  onClick={
+                    handleScan
+                  }
                 >
                   Scan for Devices
                 </button>
@@ -179,7 +294,8 @@ function DiscoveryDialog({
             )}
 
           {(isScanning ||
-            providerStates.length > 0) && (
+            providerStates.length >
+              0) && (
             <div className="discovery-scan-state">
               <div className="discovery-scan-heading">
                 <div>
@@ -204,39 +320,48 @@ function DiscoveryDialog({
               </div>
 
               <div className="discovery-provider-list">
-                {providerStates.map((provider) => (
-                  <div
-                    className="discovery-provider"
-                    key={provider.providerId}
-                  >
-                    <div>
-                      <strong>
-                        {provider.providerName}
-                      </strong>
-
-                      {provider.error && (
-                        <p>
-                          {provider.error}
-                        </p>
-                      )}
-                    </div>
-
-                    <span
-                      className={
-                        `discovery-provider-status ` +
-                        `is-${provider.status}`
+                {providerStates.map(
+                  (provider) => (
+                    <div
+                      className="discovery-provider"
+                      key={
+                        provider.providerId
                       }
                     >
-                      {formatProviderStatus(
-                        provider.status,
-                      )}
-                    </span>
-                  </div>
-                ))}
+                      <div>
+                        <strong>
+                          {
+                            provider.providerName
+                          }
+                        </strong>
+
+                        {provider.error && (
+                          <p>
+                            {
+                              provider.error
+                            }
+                          </p>
+                        )}
+                      </div>
+
+                      <span
+                        className={
+                          `discovery-provider-status ` +
+                          `is-${provider.status}`
+                        }
+                      >
+                        {formatProviderStatus(
+                          provider.status,
+                        )}
+                      </span>
+                    </div>
+                  ),
+                )}
               </div>
 
               {scanCompleted &&
-                discoveredDevices.length === 0 && (
+                discoveredDevices.length ===
+                  0 && (
                   <div className="discovery-no-results">
                     <h3>
                       No compatible devices found.
@@ -250,7 +375,8 @@ function DiscoveryDialog({
                   </div>
                 )}
 
-              {discoveredDevices.length > 0 && (
+              {discoveredDevices.length >
+                0 && (
                 <div className="discovery-results">
                   <h3>
                     Discovered Devices
@@ -258,50 +384,112 @@ function DiscoveryDialog({
 
                   <div className="discovery-device-list">
                     {discoveredDevices.map(
-                      (device, index) => (
-                        <article
-                          className="discovery-device"
-                          key={createDeviceKey(
+                      (
+                        device,
+                        index,
+                      ) => {
+                        const deviceKey =
+                          createDeviceKey(
                             device,
                             index,
-                          )}
-                        >
-                          <div>
-                            <h4>
-                              {device.name}
-                            </h4>
+                          )
 
-                            <div className="discovery-device-details">
-                              {device.manufacturer && (
-                                <span>
-                                  {device.manufacturer}
-                                </span>
-                              )}
+                        const canTestSamsung =
+                          device.providerId ===
+                            'samsung' &&
+                          Boolean(
+                            device.address,
+                          )
 
-                              {device.model && (
-                                <span>
-                                  {device.model}
-                                </span>
-                              )}
+                        const isTesting =
+                          testingDeviceKey ===
+                          deviceKey
 
-                              {device.address && (
-                                <span>
-                                  {device.address}
-                                </span>
+                        return (
+                          <article
+                            className="discovery-device"
+                            key={
+                              deviceKey
+                            }
+                          >
+                            <div>
+                              <h4>
+                                {
+                                  device.name
+                                }
+                              </h4>
+
+                              <div className="discovery-device-details">
+                                {device.manufacturer && (
+                                  <span>
+                                    {
+                                      device.manufacturer
+                                    }
+                                  </span>
+                                )}
+
+                                {device.model && (
+                                  <span>
+                                    {
+                                      device.model
+                                    }
+                                  </span>
+                                )}
+
+                                {device.address && (
+                                  <span>
+                                    {
+                                      device.address
+                                    }
+                                  </span>
+                                )}
+                              </div>
+
+                              {testMessages[
+                                deviceKey
+                              ] && (
+                                <p>
+                                  {
+                                    testMessages[
+                                      deviceKey
+                                    ]
+                                  }
+                                </p>
                               )}
                             </div>
-                          </div>
 
-                          <button
-                            type="button"
-                            className="equipment-secondary-button"
-                            disabled
-                            title="Device registration will be added after discovery."
-                          >
-                            Add Device
-                          </button>
-                        </article>
-                      ),
+                            {canTestSamsung ? (
+                              <button
+                                type="button"
+                                className="equipment-secondary-button"
+                                disabled={
+                                  testingDeviceKey !==
+                                  null
+                                }
+                                onClick={() =>
+                                  void handleSamsungMenuTest(
+                                    device,
+                                    index,
+                                  )
+                                }
+                              >
+                                {isTesting
+                                  ? 'Connecting...'
+                                  : 'Test Menu'}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="equipment-secondary-button"
+                                disabled
+                                title="Device registration will be added after discovery."
+                              >
+                                Add Device
+                              </button>
+                            )}
+                          </article>
+                        )
+                      },
                     )}
                   </div>
                 </div>
@@ -312,7 +500,9 @@ function DiscoveryDialog({
                   <button
                     type="button"
                     className="equipment-primary-button"
-                    onClick={handleScan}
+                    onClick={
+                      handleScan
+                    }
                   >
                     Scan Again
                   </button>

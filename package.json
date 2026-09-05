@@ -13,6 +13,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@github/keytar": "^7.10.6",
     "@settingforge/module-sdk": "file:../SettingForge-SDK",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
@@ -27,5 +28,8 @@
     "oxlint": "^1.79.0",
     "typescript": "~6.0.2",
     "vite": "^8.2.2"
+  },
+  "allowScripts": {
+    "@github/keytar@7.10.6": true
   }
 }

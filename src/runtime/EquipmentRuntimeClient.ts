@@ -19,6 +19,12 @@ export interface SamsungRuntimeDevice {
   address?: string
 }
 
+export interface SamsungMenuTestResult {
+  connected: boolean
+  authorized: boolean
+  tokenReceived: boolean
+}
+
 export async function getRuntimeHealth():
   Promise<EquipmentRuntimeHealth> {
   const response = await fetch(
@@ -92,6 +98,51 @@ export async function discoverSamsungDevices():
   return devices
 }
 
+export async function testSamsungMenu(
+  address: string,
+): Promise<SamsungMenuTestResult> {
+  const response = await fetch(
+    `${runtimeUrl}/providers/samsung/test-menu`,
+    {
+      method: 'POST',
+
+      /*
+       * Intentionally omit application/json for now.
+       *
+       * This keeps the request CORS-simple and avoids
+       * requiring an OPTIONS/preflight handler in the
+       * temporary test runtime.
+       */
+      body: JSON.stringify({
+        address,
+      }),
+    },
+  )
+
+  if (!response.ok) {
+    const message =
+      await readRuntimeError(
+        response,
+      )
+
+    throw new Error(
+      message ??
+      `Samsung menu test returned HTTP ${response.status}.`,
+    )
+  }
+
+  const body =
+    await response.json() as unknown
+
+  if (!isSamsungMenuTestResult(body)) {
+    throw new Error(
+      'Samsung menu test returned an invalid response.',
+    )
+  }
+
+  return body
+}
+
 function isRuntimeHealth(
   value: unknown,
 ): value is EquipmentRuntimeHealth {
@@ -143,6 +194,55 @@ function isSamsungRuntimeDevice(
       candidate.address,
     )
   )
+}
+
+function isSamsungMenuTestResult(
+  value: unknown,
+): value is SamsungMenuTestResult {
+  if (
+    typeof value !== 'object' ||
+    value === null
+  ) {
+    return false
+  }
+
+  const candidate =
+    value as Record<string, unknown>
+
+  return (
+    typeof candidate.connected ===
+      'boolean' &&
+    typeof candidate.authorized ===
+      'boolean' &&
+    typeof candidate.tokenReceived ===
+      'boolean'
+  )
+}
+
+async function readRuntimeError(
+  response: Response,
+): Promise<string | undefined> {
+  try {
+    const body =
+      await response.json() as unknown
+
+    if (
+      typeof body !== 'object' ||
+      body === null
+    ) {
+      return undefined
+    }
+
+    const candidate =
+      body as Record<string, unknown>
+
+    return typeof candidate.error ===
+      'string'
+      ? candidate.error
+      : undefined
+  } catch {
+    return undefined
+  }
 }
 
 function optionalString(

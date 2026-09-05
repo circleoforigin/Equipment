@@ -1,1 +1,1 @@
-{"root":["./runtime/local-runtime.ts","./runtime/providers/samsung/samsungdiscovery.ts"],"version":"6.0.3"}
+{"root":["./runtime/local-runtime.ts","./runtime/providers/samsung/samsungdiscovery.ts","./runtime/providers/samsung/samsungremote.ts"],"version":"6.0.3"}
