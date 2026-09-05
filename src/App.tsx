@@ -2,28 +2,49 @@ import './App.css'
 
 import {
   useRef,
+  useState,
 } from 'react'
 import {
   useDeviceRegistry,
 } from './devices/useDeviceRegistry'
 import MenuBar from './components/MenuBar'
+import DiscoveryDialog from './discovery/DiscoveryDialog'
 
 function App() {
   const registryRef = useRef<HTMLElement>(null)
+  const [isDiscoveryOpen, setIsDiscoveryOpen] =
+    useState(false)
+
   const {
     devices,
     isLoading,
     error,
   } = useDeviceRegistry()
 
+  function openDiscovery() {
+    setIsDiscoveryOpen(true)
+  }
+
+  function closeDiscovery() {
+    setIsDiscoveryOpen(false)
+  }
+
   function showDeviceRegistry() {
-    registryRef.current?.scrollIntoView({ behavior: 'smooth' })
-    registryRef.current?.focus({ preventScroll: true })
+    registryRef.current?.scrollIntoView({
+      behavior: 'smooth',
+    })
+
+    registryRef.current?.focus({
+      preventScroll: true,
+    })
   }
 
   return (
     <div className="equipment-app">
-      <MenuBar onShowDeviceRegistry={showDeviceRegistry} />
+      <MenuBar
+        onDiscoverDevices={openDiscovery}
+        onShowDeviceRegistry={showDeviceRegistry}
+      />
 
       <main className="equipment-content">
         <header className="equipment-header">
@@ -80,56 +101,61 @@ function App() {
             </div>
           )}
 
-        {!isLoading &&
-          !error &&
-          devices.length === 0 && (
-            <div className="equipment-empty-state">
-              <h3>No devices connected yet.</h3>
+          {!isLoading &&
+            !error &&
+            devices.length === 0 && (
+              <div className="equipment-empty-state">
+                <h3>No devices connected yet.</h3>
 
-              <p>
-                Equipment is ready for its first
-                device provider.
-              </p>
-            </div>
-          )}
+                <p>
+                  Equipment is ready for its first
+                  device provider.
+                </p>
+              </div>
+            )}
 
-        {!isLoading &&
-          !error &&
-          devices.length > 0 && (
-            <div className="equipment-device-list">
-              {devices.map((device) => (
-                <article
-                  className="equipment-device"
-                  key={device.id}
-                >
-                  <div>
-                    <h3>
-                      {device.name}
-                    </h3>
+          {!isLoading &&
+            !error &&
+            devices.length > 0 && (
+              <div className="equipment-device-list">
+                {devices.map((device) => (
+                  <article
+                    className="equipment-device"
+                    key={device.id}
+                  >
+                    <div>
+                      <h3>
+                        {device.name}
+                      </h3>
 
-                    <p>
-                      Provider: {device.providerId}
-                    </p>
-                  </div>
+                      <p>
+                        Provider: {device.providerId}
+                      </p>
+                    </div>
 
-                  <div className="equipment-capabilities">
-                    {device.capabilities.map(
-                      (capability) => (
-                        <span
-                          className="equipment-capability"
-                          key={capability.id}
-                        >
-                          {capability.name}
-                        </span>
-                      )
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
+                    <div className="equipment-capabilities">
+                      {device.capabilities.map(
+                        (capability) => (
+                          <span
+                            className="equipment-capability"
+                            key={capability.id}
+                          >
+                            {capability.name}
+                          </span>
+                        ),
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
         </section>
       </main>
+
+      <DiscoveryDialog
+        isOpen={isDiscoveryOpen}
+        onClose={closeDiscovery}
+      />
     </div>
   )
 }

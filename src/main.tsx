@@ -8,6 +8,12 @@ import {
   announceEquipmentReady,
 } from './host/ModulePresence'
 
+import {
+  registerEquipmentProviders,
+} from './providers/registerProviders'
+
+registerEquipmentProviders()
+
 createRoot(
   document.getElementById('root')!
 ).render(

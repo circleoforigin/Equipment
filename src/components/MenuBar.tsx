@@ -4,13 +4,17 @@ import {
   useState,
 } from 'react'
 
-type MenuId = 'project' | 'equipment' | 'settings'
+type MenuId = 'project' | 'devices' | 'settings'
 
 interface MenuBarProps {
+  onDiscoverDevices: () => void
   onShowDeviceRegistry: () => void
 }
 
-function MenuBar({ onShowDeviceRegistry }: MenuBarProps) {
+function MenuBar({
+  onDiscoverDevices,
+  onShowDeviceRegistry,
+}: MenuBarProps) {
   const menuBarRef = useRef<HTMLDivElement>(null)
   const [openMenu, setOpenMenu] = useState<MenuId | null>(null)
 
@@ -19,20 +23,37 @@ function MenuBar({ onShowDeviceRegistry }: MenuBarProps) {
 
     function handleOutsidePointerDown(event: PointerEvent) {
       const target = event.target
-      if (target instanceof Node &&
-          !menuBarRef.current?.contains(target)) {
+
+      if (
+        target instanceof Node &&
+        !menuBarRef.current?.contains(target)
+      ) {
         setOpenMenu(null)
       }
     }
 
-    document.addEventListener('pointerdown', handleOutsidePointerDown)
+    document.addEventListener(
+      'pointerdown',
+      handleOutsidePointerDown,
+    )
+
     return () => {
-      document.removeEventListener('pointerdown', handleOutsidePointerDown)
+      document.removeEventListener(
+        'pointerdown',
+        handleOutsidePointerDown,
+      )
     }
   }, [openMenu])
 
   function toggleMenu(menu: MenuId) {
-    setOpenMenu((current) => current === menu ? null : menu)
+    setOpenMenu(
+      (current) => current === menu ? null : menu,
+    )
+  }
+
+  function discoverDevices() {
+    setOpenMenu(null)
+    onDiscoverDevices()
   }
 
   function showDeviceRegistry() {
@@ -41,7 +62,10 @@ function MenuBar({ onShowDeviceRegistry }: MenuBarProps) {
   }
 
   return (
-    <div ref={menuBarRef} className="menu-bar">
+    <div
+      ref={menuBarRef}
+      className="menu-bar"
+    >
       <div className="menu-group">
         <button
           type="button"
@@ -53,10 +77,19 @@ function MenuBar({ onShowDeviceRegistry }: MenuBarProps) {
 
         {openMenu === 'project' && (
           <div className="dropdown-menu">
-            <button type="button" className="dropdown-item" disabled>
+            <button
+              type="button"
+              className="dropdown-item"
+              disabled
+            >
               New Project...
             </button>
-            <button type="button" className="dropdown-item" disabled>
+
+            <button
+              type="button"
+              className="dropdown-item"
+              disabled
+            >
               Load Project...
             </button>
           </div>
@@ -67,13 +100,23 @@ function MenuBar({ onShowDeviceRegistry }: MenuBarProps) {
         <button
           type="button"
           className="menu-item"
-          onClick={() => toggleMenu('equipment')}
+          onClick={() => toggleMenu('devices')}
         >
-          Equipment
+          Devices
         </button>
 
-        {openMenu === 'equipment' && (
+        {openMenu === 'devices' && (
           <div className="dropdown-menu">
+            <button
+              type="button"
+              className="dropdown-item"
+              onClick={discoverDevices}
+            >
+              Discover Devices...
+            </button>
+
+            <div className="dropdown-separator" />
+
             <button
               type="button"
               className="dropdown-item"
@@ -96,7 +139,11 @@ function MenuBar({ onShowDeviceRegistry }: MenuBarProps) {
 
         {openMenu === 'settings' && (
           <div className="dropdown-menu">
-            <button type="button" className="dropdown-item" disabled>
+            <button
+              type="button"
+              className="dropdown-item"
+              disabled
+            >
               Settings...
             </button>
           </div>
