@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev:ui": "vite",
+    "runtime:build": "tsc -p tsconfig.runtime.json",
+    "runtime": "npm run runtime:build && node dist-runtime/local-runtime.js",
+    "build": "tsc -b && vite build && npm run runtime:build",
     "lint": "oxlint",
     "preview": "vite preview"
   },
