@@ -16,10 +16,11 @@ function App() {
     useState(false)
 
   const {
-    devices,
-    isLoading,
-    error,
-  } = useDeviceRegistry()
+  devices,
+  isLoading,
+  error,
+  reload,
+} = useDeviceRegistry()
 
   function openDiscovery() {
     setIsDiscoveryOpen(true)
@@ -27,6 +28,7 @@ function App() {
 
   function closeDiscovery() {
     setIsDiscoveryOpen(false)
+    void reload()
   }
 
   function showDeviceRegistry() {
@@ -133,18 +135,25 @@ function App() {
                       </p>
                     </div>
 
-                    <div className="equipment-capabilities">
-                      {device.capabilities.map(
-                        (capability) => (
-                          <span
-                            className="equipment-capability"
-                            key={capability.id}
-                          >
-                            {capability.name}
-                          </span>
-                        ),
-                      )}
-                    </div>
+                    <div className="equipment-device-details">
+  {device.manufacturer && (
+    <span>
+      Manufacturer: {device.manufacturer}
+    </span>
+  )}
+
+  {device.model && (
+    <span>
+      Model: {device.model}
+    </span>
+  )}
+
+  {device.address && (
+    <span>
+      Address: {device.address}
+    </span>
+  )}
+</div>
                   </article>
                 ))}
               </div>

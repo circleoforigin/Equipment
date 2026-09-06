@@ -2,66 +2,72 @@ import {
   useCallback,
   useEffect,
   useState,
-} from 'react';
-
-import type {
-  EquipmentDevice,
-} from '../models/Device';
+} from 'react'
 
 import {
-  deviceRepository,
-} from './DeviceRepository';
+  getRegisteredDevices,
+  type RegisteredDevice,
+} from '../runtime/EquipmentRuntimeClient'
 
 export function useDeviceRegistry() {
   const [
     devices,
     setDevices,
-  ] = useState<EquipmentDevice[]>([]);
+  ] = useState<
+    RegisteredDevice[]
+  >([])
 
   const [
     isLoading,
     setIsLoading,
-  ] = useState(true);
+  ] = useState(true)
 
   const [
     error,
     setError,
-  ] = useState<string | null>(null);
+  ] = useState<
+    string | null
+  >(null)
 
   const reload =
-    useCallback(async () => {
-      setIsLoading(true);
-      setError(null);
+    useCallback(
+      async () => {
+        setIsLoading(true)
+        setError(null)
 
-      try {
-        const loadedDevices =
-          await deviceRepository.loadDevices();
+        try {
+          const loadedDevices =
+            await getRegisteredDevices()
 
-        setDevices(loadedDevices);
-      } catch (loadError) {
-        console.error(
-          '[Equipment] Failed to load Device Registry.',
-          loadError
-        );
+          setDevices(
+            loadedDevices,
+          )
+        } catch (loadError) {
+          console.error(
+            '[Equipment] Failed to load Device Registry.',
+            loadError,
+          )
 
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : 'Unable to load Device Registry.'
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    }, []);
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : 'Unable to load Device Registry.',
+          )
+        } finally {
+          setIsLoading(false)
+        }
+      },
+      [],
+    )
 
   useEffect(() => {
-    void reload();
-  }, [reload]);
+    void reload()
+  }, [reload])
 
   return {
     devices,
     isLoading,
     error,
     reload,
-  };
+  }
 }
