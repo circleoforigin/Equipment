@@ -401,7 +401,7 @@ function RoomManagerDialog({
               )}
             </div>
           ) : (
-            <>
+            <div className="room-manager-editor">
               <div className="room-manager-tabs">
                 <button
                   type="button"
@@ -648,7 +648,7 @@ function RoomManagerDialog({
                   )}
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>

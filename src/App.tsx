@@ -24,6 +24,9 @@ import NewRoomDialog, {
   type NewRoomData,
 } from './components/NewRoomDialog'
 
+import RoomManagerDialog from './components/RoomManagerDialog'
+import RoomSelectorDialog from './components/RoomSelectorDialog'
+
 import type {
   EquipmentRoom,
 } from './models/Room'
@@ -93,6 +96,21 @@ const [
 const [
   isNewRoomOpen,
   setIsNewRoomOpen,
+] = useState(false)
+
+const [
+  isRoomManagerOpen,
+  setIsRoomManagerOpen,
+] = useState(false)
+
+const [
+  rooms,
+  setRooms,
+] = useState<EquipmentRoom[]>([])
+
+const [
+  isRoomSelectorOpen,
+  setIsRoomSelectorOpen,
 ] = useState(false)
 
 const pendingProjectActionRef =
@@ -675,6 +693,63 @@ async function handleDeleteSelectedProject(
   }
 }
 
+async function loadRooms() {
+  try {
+    const loadedRooms =
+      await roomRepository.loadRooms()
+
+    const sortedRooms =
+      [...loadedRooms].sort(
+        (left, right) =>
+          left.name.localeCompare(
+            right.name,
+          ),
+      )
+
+    setRooms(sortedRooms)
+  } catch (loadError) {
+    console.error(
+      '[Equipment] Unable to load Rooms.',
+      loadError,
+    )
+  }
+}
+
+async function handleSelectRoom() {
+  if (!activeProject) {
+    return
+  }
+
+  await loadRooms()
+
+  setIsRoomSelectorOpen(true)
+}
+
+function selectRoom(
+  roomId: string,
+) {
+  if (!activeProject) {
+    return
+  }
+
+  setActiveProject({
+    ...activeProject,
+
+    activeRoomId:
+      roomId,
+  })
+
+  setProjectDirty(true)
+
+  setIsRoomSelectorOpen(false)
+}
+
+async function handleManageRooms() {
+  await loadRooms()
+
+  setIsRoomManagerOpen(true)
+}
+
 async function createRoom(
   data: NewRoomData,
 ) {
@@ -701,15 +776,75 @@ async function createRoom(
   }
 
   try {
-    await roomRepository.saveRoom(
-      room,
-    )
+    const updatedRooms =
+  await roomRepository.saveRoom(
+    room,
+  )
 
-    setIsNewRoomOpen(false)
+setRooms(
+  [...updatedRooms].sort(
+    (left, right) =>
+      left.name.localeCompare(
+        right.name,
+      ),
+  ),
+)
+
+setIsNewRoomOpen(false)
   } catch (createError) {
     console.error(
       '[Equipment] Unable to create Room.',
       createError,
+    )
+  }
+}
+
+async function handleSaveRoom(
+  room: EquipmentRoom,
+) {
+  try {
+    const updatedRooms =
+      await roomRepository.saveRoom(
+        room,
+      )
+
+    setRooms(
+      [...updatedRooms].sort(
+        (left, right) =>
+          left.name.localeCompare(
+            right.name,
+          ),
+      ),
+    )
+  } catch (saveError) {
+    console.error(
+      '[Equipment] Unable to save Room.',
+      saveError,
+    )
+  }
+}
+
+async function handleDeleteRoom(
+  roomId: string,
+) {
+  try {
+    const updatedRooms =
+      await roomRepository.deleteRoom(
+        roomId,
+      )
+
+    setRooms(
+      [...updatedRooms].sort(
+        (left, right) =>
+          left.name.localeCompare(
+            right.name,
+          ),
+      ),
+    )
+  } catch (deleteError) {
+    console.error(
+      '[Equipment] Unable to delete Room.',
+      deleteError,
     )
   }
 }
@@ -797,8 +932,12 @@ async function createRoom(
           void handleDeleteProject()
         }}        
 
+        onSelectRoom={() => {
+          void handleSelectRoom()
+        }}
+
         onManageRooms={() => {
-          // Room Manager comes next.
+          void handleManageRooms()
         }}
 
         onDiscoverDevices={
@@ -829,6 +968,52 @@ async function createRoom(
     <div className="equipment-project-workspace" />
   )}
 </main>
+
+{isRoomSelectorOpen && (
+  <RoomSelectorDialog
+    rooms={rooms}
+
+    selectedRoomId={
+      activeProject?.activeRoomId
+    }
+
+    onCancel={() =>
+      setIsRoomSelectorOpen(false)
+    }
+
+    onSelectRoom={
+      selectRoom
+    }
+  />
+)}
+
+{isRoomManagerOpen && (
+  <RoomManagerDialog
+    rooms={rooms}
+
+    devices={devices}
+
+    activeRoomId={
+      activeProject?.activeRoomId
+    }
+
+    onClose={() =>
+      setIsRoomManagerOpen(false)
+    }
+
+    onCreateRoom={() =>
+      setIsNewRoomOpen(true)
+    }
+
+    onDeleteRoom={
+      handleDeleteRoom
+    }
+
+    onSaveRoom={
+      handleSaveRoom
+    }
+  />
+)}
 
 {isNewRoomOpen && (
   <NewRoomDialog

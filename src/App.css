@@ -800,3 +800,270 @@
 .project-picker-empty {
   color: #999999;
 }
+
+/* =========================
+   ROOM MANAGER
+   Based on SACscape
+   ========================= */
+
+.room-manager-dialog {
+  width: min(1000px, 90vw);
+  height: min(680px, 85vh);
+
+  padding: 16px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  overflow: hidden;
+
+  color: #d8d8d8;
+
+  background: #2b2d31;
+  border: 1px solid #45474e;
+  border-radius: 8px;
+
+  box-shadow:
+    0 18px 50px
+    rgba(0, 0, 0, 0.5);
+}
+
+.room-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.room-manager-header h2 {
+  margin: 0;
+
+  color: #ffffff;
+}
+
+.room-manager-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.room-manager-header-actions button {
+  padding: 6px 12px;
+
+  color: #eeeeee;
+  background: #34363c;
+
+  border: 1px solid #45474e;
+  border-radius: 4px;
+
+  cursor: pointer;
+}
+
+.room-manager-header-actions button:hover:not(:disabled) {
+  background: #414349;
+}
+
+.room-manager-header-actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.room-manager-header-separator {
+  align-self: stretch;
+
+  width: 1px;
+  min-height: 24px;
+
+  background: #45474e;
+}
+
+.room-manager-body {
+  flex: 1;
+  min-height: 0;
+
+  display: grid;
+  grid-template-columns: 220px 1fr;
+
+  overflow: hidden;
+
+  border: 1px solid #45474e;
+}
+
+.room-manager-list {
+  min-height: 0;
+
+  overflow-y: auto;
+
+  background: #202124;
+  border-right: 1px solid #45474e;
+}
+
+.room-manager-list-title {
+  padding: 8px 10px;
+
+  color: #aeb0b6;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  border-bottom: 1px solid #45474e;
+}
+
+.room-manager-empty {
+  padding: 14px 10px;
+
+  color: #8f9299;
+
+  font-size: 12px;
+}
+
+.room-manager-room-entry {
+  width: 100%;
+  padding: 8px 10px;
+
+  background: transparent;
+  color: #d8d8d8;
+
+  border: 0;
+
+  text-align: left;
+  font: inherit;
+
+  cursor: pointer;
+}
+
+.room-manager-room-entry:hover {
+  background: #303238;
+}
+
+.room-manager-room-entry.selected {
+  background: #454850;
+  color: #ffffff;
+}
+
+.room-manager-room-entry.active-room:not(.selected) {
+  box-shadow:
+    inset 3px 0
+    var(--accent);
+}
+
+.room-manager-editor {
+  min-width: 0;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  background: #25262a;
+}
+
+.room-manager-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  border-bottom: 1px solid #45474e;
+}
+
+.room-manager-tabs button {
+  padding: 8px 6px;
+
+  background: #202124;
+  color: #8f9299;
+
+  border: 0;
+
+  font: inherit;
+  font-size: 12px;
+
+  cursor: pointer;
+}
+
+.room-manager-tabs button:hover {
+  background: #303238;
+  color: #d8d8d8;
+}
+
+.room-manager-tabs button.active {
+  background: #454850;
+  color: #ffffff;
+}
+
+.room-manager-features,
+.room-hardware-panel {
+  flex: 1;
+  min-height: 0;
+
+  padding: 14px;
+
+  overflow-y: auto;
+}
+
+.room-feature-row {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+
+  align-items: center;
+  gap: 10px;
+
+  padding: 7px 8px;
+
+  font-size: 12px;
+}
+
+.room-feature-row input,
+.room-feature-row select,
+.room-device-mapping select,
+.room-device-feature input {
+  min-width: 0;
+
+  padding: 6px 8px;
+
+  box-sizing: border-box;
+
+  color: #ffffff;
+  background: #18191c;
+
+  border: 1px solid #45474e;
+  border-radius: 4px;
+}
+
+.room-feature-section {
+  margin-top: 14px;
+  padding: 8px;
+
+  color: #aeb0b6;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  border-bottom: 1px solid #45474e;
+}
+
+.room-device-feature,
+.room-device-mapping {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+
+  align-items: center;
+  gap: 8px;
+
+  padding: 8px;
+}
+
+.room-device-mapping {
+  grid-template-columns: 160px minmax(0, 1fr);
+}
+
+.room-device-feature button {
+  padding: 5px 10px;
+
+  color: #eeeeee;
+  background: #34363c;
+
+  border: 1px solid #45474e;
+  border-radius: 4px;
+
+  cursor: pointer;
+}
