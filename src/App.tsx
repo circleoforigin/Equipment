@@ -2,7 +2,6 @@ import './App.css'
 
 import {
   useEffect,
-  useRef,
   useState,
 } from 'react'
 
@@ -15,6 +14,7 @@ import type {
 
 import MenuBar from './components/MenuBar'
 import DiscoveryDialog from './discovery/DiscoveryDialog'
+import NewProjectDialog from './projects/NewProjectDialog'
 
 import {
   useDeviceRegistry,
@@ -36,14 +36,23 @@ import {
   announceEquipmentReady,
 } from './host/ModulePresence'
 
-function App() {
-  const registryRef =
-    useRef<HTMLElement>(null)
+import DeviceRegistryDialog from './devices/DeviceRegistryDialog'
 
+function App() {
   const [
     isDiscoveryOpen,
     setIsDiscoveryOpen,
   ] = useState(false)
+
+  const [
+  isNewProjectOpen,
+  setIsNewProjectOpen,
+] = useState(false)
+
+const [
+  isDeviceRegistryOpen,
+  setIsDeviceRegistryOpen,
+] = useState(false)
 
   const [
     activeProject,
@@ -334,68 +343,56 @@ function App() {
    */
 
   async function handleNewProject() {
-    const canContinue =
-      await confirmReplaceActiveProject()
+  const canContinue =
+    await confirmReplaceActiveProject()
 
-    if (!canContinue) {
-      return
-    }
-
-    const enteredName =
-      window.prompt(
-        'Enter a name for the new Equipment project:',
-      )
-
-    if (enteredName === null) {
-      return
-    }
-
-    const name =
-      enteredName.trim()
-
-    if (!name) {
-      return
-    }
-
-    const now =
-      new Date().toISOString()
-
-    const project:
-      EquipmentProject = {
-        id:
-          crypto.randomUUID(),
-
-        name,
-
-        controlIds: [],
-
-        reactions: [],
-
-        createdAt:
-          now,
-
-        updatedAt:
-          now,
-      }
-
-    try {
-      await projectRepository
-        .saveProject(project)
-
-      loadProjectIntoWorkspace(
-        project,
-      )
-    } catch (createError) {
-      console.error(
-        '[Equipment] Unable to create project.',
-        createError,
-      )
-
-      window.alert(
-        'Unable to create the Equipment project.',
-      )
-    }
+  if (!canContinue) {
+    return
   }
+
+  setIsNewProjectOpen(true)
+}
+
+async function createProject(
+  name: string,
+) {
+  const now =
+    new Date().toISOString()
+
+  const project:
+    EquipmentProject = {
+      id:
+        crypto.randomUUID(),
+
+      name,
+
+      controlIds: [],
+
+      reactions: [],
+
+      createdAt:
+        now,
+
+      updatedAt:
+        now,
+    }
+
+  try {
+    await projectRepository
+      .saveProject(project)
+
+    loadProjectIntoWorkspace(
+      project,
+    )
+  } catch (createError) {
+    console.error(
+      '[Equipment] Unable to create project.',
+      createError,
+    )
+
+    throw createError
+  }
+}
 
   async function handleLoadProject() {
     const canContinue =
@@ -605,15 +602,7 @@ function App() {
   }
 
   function showDeviceRegistry() {
-    registryRef.current
-      ?.scrollIntoView({
-        behavior: 'smooth',
-      })
-
-    registryRef.current
-      ?.focus({
-        preventScroll: true,
-      })
+    setIsDeviceRegistryOpen(true)
   }
 
   /*
@@ -625,8 +614,8 @@ function App() {
   return (
     <div className="equipment-app">
       <MenuBar
-        hasActiveProject={
-          Boolean(activeProject)
+        projectName={
+          activeProject?.name
         }
 
         onNewProject={() => {
@@ -658,202 +647,73 @@ function App() {
         }
       />
 
-      <main className="equipment-content">
-        <header className="equipment-header">
-          <div>
-            <p className="equipment-kicker">
-              SettingForge Module
-            </p>
+      <main className="equipment-workspace">
+  {!activeProject ? (
+    <div className="equipment-empty-workspace">
+      <h2>
+        No Project Loaded
+      </h2>
 
-            <h1>Equipment</h1>
+      <p>
+        Create or load a project to get started.
+      </p>
+    </div>
+  ) : (
+    <div className="equipment-project-workspace" />
+  )}
+</main>
 
-            <p className="equipment-subtitle">
-              Physical device connectivity,
-              rooms, controls, capabilities,
-              and reactions.
-            </p>
-          </div>
-        </header>
+      <NewProjectDialog
+  isOpen={
+    isNewProjectOpen
+  }
 
-        <section className="equipment-section">
-          <div className="equipment-section-heading">
-            <div>
-              <h2>
-                {activeProject
-                  ? activeProject.name
-                  : 'No Project Open'}
-              </h2>
+  onClose={() =>
+    setIsNewProjectOpen(false)
+  }
 
-              <p>
-                {activeProject
-                  ? 'Active Equipment Project'
-                  : 'Create or load an Equipment Project to begin configuring experience behavior.'}
-              </p>
-            </div>
-
-            {activeProject && (
-              <span className="equipment-count">
-                {projectDirty
-                  ? 'Unsaved'
-                  : 'Saved'}
-              </span>
-            )}
-          </div>
-
-          {!activeProject && (
-            <div className="equipment-empty-state">
-              <h3>
-                No Equipment Project is active.
-              </h3>
-
-              <p>
-                Use Project → New Project or
-                Project → Load Project.
-              </p>
-            </div>
-          )}
-
-          {activeProject && (
-            <div className="equipment-empty-state">
-              <h3>
-                Project workspace ready.
-              </h3>
-
-              <p>
-                Rooms, Controls, and Reactions
-                will be added here as those
-                systems are implemented.
-              </p>
-            </div>
-          )}
-        </section>
-
-        <section
-          ref={registryRef}
-          className="equipment-section"
-          tabIndex={-1}
-        >
-          <div className="equipment-section-heading">
-            <div>
-              <h2>
-                Device Registry
-              </h2>
-
-              <p>
-                Physical devices known
-                to Equipment.
-              </p>
-            </div>
-
-            {!isLoading && !error && (
-              <span className="equipment-count">
-                {devices.length}
-              </span>
-            )}
-          </div>
-
-          {isLoading && (
-            <p className="equipment-status">
-              Loading devices...
-            </p>
-          )}
-
-          {error && (
-            <div className="equipment-error">
-              <strong>
-                Device Registry could
-                not be loaded.
-              </strong>
-
-              <p>
-                {error}
-              </p>
-            </div>
-          )}
-
-          {!isLoading &&
-            !error &&
-            devices.length === 0 && (
-              <div className="equipment-empty-state">
-                <h3>
-                  No devices connected yet.
-                </h3>
-
-                <p>
-                  Discover a supported
-                  physical device to begin.
-                </p>
-              </div>
-            )}
-
-          {!isLoading &&
-            !error &&
-            devices.length > 0 && (
-              <div className="equipment-device-list">
-                {devices.map(
-                  (device) => (
-                    <article
-                      className="equipment-device"
-                      key={device.id}
-                    >
-                      <div>
-                        <h3>
-                          {device.name}
-                        </h3>
-
-                        <p>
-                          Provider:{' '}
-                          {device.providerId}
-                        </p>
-                      </div>
-
-                      <div className="equipment-device-details">
-                        {device.manufacturer && (
-                          <span>
-                            Manufacturer:{' '}
-                            {device.manufacturer}
-                          </span>
-                        )}
-
-                        {device.model && (
-                          <span>
-                            Model:{' '}
-                            {device.model}
-                          </span>
-                        )}
-
-                        {device.address && (
-                          <span>
-                            Address:{' '}
-                            {device.address}
-                          </span>
-                        )}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void handleRemoveDevice(
-                            device.id,
-                            device.name,
-                          )
-                        }}
-                      >
-                        Remove Device
-                      </button>
-                    </article>
-                  ),
-                )}
-              </div>
-            )}
-        </section>
-      </main>
+  onCreate={
+    createProject
+  }
+/>
 
       <DiscoveryDialog
         isOpen={isDiscoveryOpen}
         onClose={closeDiscovery}
       />
-    </div>
+
+      <DeviceRegistryDialog
+  isOpen={
+    isDeviceRegistryOpen
+  }
+
+  devices={
+    devices
+  }
+
+  isLoading={
+    isLoading
+  }
+
+  error={
+    error
+  }
+
+  onClose={() =>
+    setIsDeviceRegistryOpen(false)
+  }
+
+  onRemoveDevice={(
+    id,
+    name,
+  ) => {
+    void handleRemoveDevice(
+      id,
+      name,
+    )
+  }}
+/>
+    </div>   
   )
 }
 

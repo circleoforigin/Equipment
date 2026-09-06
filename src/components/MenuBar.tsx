@@ -10,7 +10,7 @@ type MenuId =
   | 'settings'
 
 interface MenuBarProps {
-  hasActiveProject: boolean
+  projectName?: string
 
   onNewProject: () => void
   onLoadProject: () => void
@@ -23,7 +23,7 @@ interface MenuBarProps {
 }
 
 function MenuBar({
-  hasActiveProject,
+  projectName,
 
   onNewProject,
   onLoadProject,
@@ -139,7 +139,7 @@ function MenuBar({
             <button
               type="button"
               className="dropdown-item"
-              disabled={!hasActiveProject}
+              disabled={!projectName}
               onClick={() =>
                 runMenuAction(
                   onSaveProject,
@@ -152,7 +152,7 @@ function MenuBar({
             <button
               type="button"
               className="dropdown-item"
-              disabled={!hasActiveProject}
+              disabled={!projectName}
               onClick={() =>
                 runMenuAction(
                   onCloseProject,
@@ -167,7 +167,7 @@ function MenuBar({
             <button
               type="button"
               className="dropdown-item"
-              disabled={!hasActiveProject}
+              disabled={!projectName}
               onClick={() =>
                 runMenuAction(
                   onDeleteProject,
@@ -245,6 +245,12 @@ function MenuBar({
           </div>
         )}
       </div>
+
+      {projectName && (
+        <div className="menu-project-name">
+          {projectName}.proj
+        </div>
+      )}
     </div>
   )
 }
