@@ -15,6 +15,7 @@ import type {
 import MenuBar from './components/MenuBar'
 import DiscoveryDialog from './discovery/DiscoveryDialog'
 import NewProjectDialog from './projects/NewProjectDialog'
+import LoadProjectDialog from './projects/LoadProjectDialog'
 
 import {
   useDeviceRegistry,
@@ -48,6 +49,16 @@ function App() {
   isNewProjectOpen,
   setIsNewProjectOpen,
 ] = useState(false)
+
+const [
+  isLoadProjectOpen,
+  setIsLoadProjectOpen,
+] = useState(false)
+
+const [
+  savedProjects,
+  setSavedProjects,
+] = useState<EquipmentProject[]>([])
 
 const [
   isDeviceRegistryOpen,
@@ -395,98 +406,73 @@ async function createProject(
 }
 
   async function handleLoadProject() {
-    const canContinue =
-      await confirmReplaceActiveProject()
+  const canContinue =
+    await confirmReplaceActiveProject()
 
-    if (!canContinue) {
+  if (!canContinue) {
+    return
+  }
+
+  try {
+    const projects =
+      await projectRepository
+        .loadProjects()
+
+    const sortedProjects =
+      [...projects].sort(
+        (left, right) =>
+          left.name.localeCompare(
+            right.name,
+          ),
+      )
+
+    setSavedProjects(
+      sortedProjects,
+    )
+
+    setIsLoadProjectOpen(
+      true,
+    )
+  } catch (loadError) {
+    console.error(
+      '[Equipment] Unable to load projects.',
+      loadError,
+    )
+  }
+}
+
+async function loadSelectedProject(
+  projectId: string,
+) {
+  try {
+    const project =
+      await projectRepository
+        .loadProject(
+          projectId,
+        )
+
+    if (!project) {
+      console.error(
+        '[Equipment] Selected project was not found.',
+      )
+
       return
     }
 
-    try {
-      const projects =
-        await projectRepository
-          .loadProjects()
+    loadProjectIntoWorkspace(
+      project,
+    )
 
-      if (projects.length === 0) {
-        window.alert(
-          'No Equipment projects have been saved yet.',
-        )
-
-        return
-      }
-
-      const sortedProjects =
-        [...projects].sort(
-          (left, right) =>
-            left.name.localeCompare(
-              right.name,
-            ),
-        )
-
-      const choices =
-        sortedProjects
-          .map(
-            (project, index) =>
-              `${index + 1}. ${project.name}`,
-          )
-          .join('\n')
-
-      const selection =
-        window.prompt(
-          `Choose a project:\n\n${choices}\n\nEnter the project number:`,
-        )
-
-      if (selection === null) {
-        return
-      }
-
-      const selectedIndex =
-        Number.parseInt(
-          selection.trim(),
-          10,
-        ) - 1
-
-      const selectedProject =
-        sortedProjects[
-          selectedIndex
-        ]
-
-      if (!selectedProject) {
-        window.alert(
-          'That project selection is not valid.',
-        )
-
-        return
-      }
-
-      const project =
-        await projectRepository
-          .loadProject(
-            selectedProject.id,
-          )
-
-      if (!project) {
-        window.alert(
-          'The selected Equipment project could not be found.',
-        )
-
-        return
-      }
-
-      loadProjectIntoWorkspace(
-        project,
-      )
-    } catch (loadError) {
-      console.error(
-        '[Equipment] Unable to load projects.',
-        loadError,
-      )
-
-      window.alert(
-        'Unable to load Equipment projects.',
-      )
-    }
+    setIsLoadProjectOpen(
+      false,
+    )
+  } catch (loadError) {
+    console.error(
+      '[Equipment] Unable to load project.',
+      loadError,
+    )
   }
+}
 
   function handleSaveProject() {
     void saveActiveProject()
@@ -650,32 +636,54 @@ async function createProject(
       <main className="equipment-workspace">
   {!activeProject ? (
     <div className="equipment-empty-workspace">
-      <h2>
-        No Project Loaded
-      </h2>
+  <div className="module-identifier">
+    Equipment
+  </div>
 
-      <p>
-        Create or load a project to get started.
-      </p>
-    </div>
+  <h2>
+    No Project Loaded
+  </h2>
+
+  <p>
+    Create or load a project to get started.
+  </p>
+</div>
   ) : (
     <div className="equipment-project-workspace" />
   )}
 </main>
 
       <NewProjectDialog
-  isOpen={
-    isNewProjectOpen
-  }
+        isOpen={
+          isNewProjectOpen
+        }
 
-  onClose={() =>
-    setIsNewProjectOpen(false)
-  }
+        onClose={() =>
+          setIsNewProjectOpen(false)
+        }
 
-  onCreate={
-    createProject
-  }
-/>
+        onCreate={
+          createProject
+        }
+      />
+
+      <LoadProjectDialog
+        isOpen={
+          isLoadProjectOpen
+        }
+
+        projects={
+          savedProjects
+        }
+
+        onClose={() =>
+          setIsLoadProjectOpen(false)
+        }
+
+        onLoad={
+          loadSelectedProject
+        }
+      />
 
       <DiscoveryDialog
         isOpen={isDiscoveryOpen}

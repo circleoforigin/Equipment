@@ -171,6 +171,17 @@
   background: #202225;
 }
 
+.module-identifier {
+  margin-bottom: 10px;
+
+  color: #6f7378;
+
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
 .equipment-empty-workspace {
   text-align: center;
 }
@@ -743,4 +754,49 @@
   opacity: 0.45;
 
   cursor: default;
+}
+
+/* =========================
+   PROJECT PICKER
+   ========================= */
+
+.project-picker-list {
+  display: flex;
+  flex-direction: column;
+
+  max-height: 320px;
+
+  overflow-y: auto;
+
+  border: 1px solid #454545;
+}
+
+.project-picker-item {
+  width: 100%;
+  padding: 9px 10px;
+
+  border: none;
+  border-bottom: 1px solid #3d3d3d;
+
+  background: transparent;
+  color: #eeeeee;
+
+  font: inherit;
+  font-size: 14px;
+
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.project-picker-item:last-child {
+  border-bottom: none;
+}
+
+.project-picker-item:hover {
+  background: #3a3a3a;
+}
+
+.project-picker-empty {
+  color: #999999;
 }
