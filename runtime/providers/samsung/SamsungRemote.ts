@@ -1,3 +1,5 @@
+import keytar from '@github/keytar'
+
 import WebSocket, {
   type RawData,
 } from 'ws'
@@ -5,14 +7,14 @@ import WebSocket, {
 const SAMSUNG_REMOTE_PORT = 8002
 const CONNECTION_TIMEOUT_MS = 30000
 
+const CREDENTIAL_SERVICE =
+  'SettingForge Equipment Samsung'
+
 const CLIENT_NAME =
   Buffer.from(
     'SettingForge Equipment',
     'utf8',
   ).toString('base64')
-
-const tokensByAddress =
-  new Map<string, string>()
 
 interface SamsungConnectMessage {
   event?: unknown
@@ -31,7 +33,7 @@ export async function testSamsungMenu(
   address: string,
 ): Promise<SamsungMenuTestResult> {
   const existingToken =
-    tokensByAddress.get(address)
+    await getStoredToken(address)
 
   const token =
     await connectAndSendKey(
@@ -40,8 +42,11 @@ export async function testSamsungMenu(
       existingToken,
     )
 
-  if (token) {
-    tokensByAddress.set(
+  if (
+    token &&
+    token !== existingToken
+  ) {
+    await storeToken(
       address,
       token,
     )
@@ -53,6 +58,39 @@ export async function testSamsungMenu(
     tokenReceived:
       token !== undefined,
   }
+}
+
+async function getStoredToken(
+  address: string,
+): Promise<string | undefined> {
+  const token =
+    await keytar.getPassword(
+      CREDENTIAL_SERVICE,
+      createCredentialAccount(
+        address,
+      ),
+    )
+
+  return token ?? undefined
+}
+
+async function storeToken(
+  address: string,
+  token: string,
+): Promise<void> {
+  await keytar.setPassword(
+    CREDENTIAL_SERVICE,
+    createCredentialAccount(
+      address,
+    ),
+    token,
+  )
+}
+
+function createCredentialAccount(
+  address: string,
+): string {
+  return `samsung:${address}`
 }
 
 function connectAndSendKey(
@@ -138,7 +176,9 @@ function connectAndSendKey(
         'message',
         (data: RawData) => {
           const message =
-            parseConnectMessage(data)
+            parseConnectMessage(
+              data,
+            )
 
           if (!message) {
             return

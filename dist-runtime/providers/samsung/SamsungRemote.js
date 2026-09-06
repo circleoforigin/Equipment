@@ -1,19 +1,31 @@
+import keytar from '@github/keytar';
 import WebSocket from 'ws';
 const SAMSUNG_REMOTE_PORT = 8002;
 const CONNECTION_TIMEOUT_MS = 30000;
+const CREDENTIAL_SERVICE = 'SettingForge Equipment Samsung';
 const CLIENT_NAME = Buffer.from('SettingForge Equipment', 'utf8').toString('base64');
-const tokensByAddress = new Map();
 export async function testSamsungMenu(address) {
-    const existingToken = tokensByAddress.get(address);
+    const existingToken = await getStoredToken(address);
     const token = await connectAndSendKey(address, 'KEY_MENU', existingToken);
-    if (token) {
-        tokensByAddress.set(address, token);
+    if (token &&
+        token !== existingToken) {
+        await storeToken(address, token);
     }
     return {
         connected: true,
         authorized: true,
         tokenReceived: token !== undefined,
     };
+}
+async function getStoredToken(address) {
+    const token = await keytar.getPassword(CREDENTIAL_SERVICE, createCredentialAccount(address));
+    return token ?? undefined;
+}
+async function storeToken(address, token) {
+    await keytar.setPassword(CREDENTIAL_SERVICE, createCredentialAccount(address), token);
+}
+function createCredentialAccount(address) {
+    return `samsung:${address}`;
 }
 function connectAndSendKey(address, key, token) {
     return new Promise((resolve, reject) => {

@@ -4,7 +4,9 @@ import {
 } from 'react'
 
 import {
-  testSamsungMenu,
+  getRegisteredDevices,
+  registerDevice,
+  type RegisteredDevice,
 } from '../runtime/EquipmentRuntimeClient'
 
 import {
@@ -25,17 +27,29 @@ function DiscoveryDialog({
   isOpen,
   onClose,
 }: DiscoveryDialogProps) {
-  const [isScanning, setIsScanning] = useState(false)
+  const [isScanning, setIsScanning] =
+    useState(false)
 
   const [
     providerStates,
     setProviderStates,
-  ] = useState<ProviderDiscoveryState[]>([])
+  ] = useState<
+    ProviderDiscoveryState[]
+  >([])
 
   const [
     discoveredDevices,
     setDiscoveredDevices,
-  ] = useState<DiscoveredDevice[]>([])
+  ] = useState<
+    DiscoveredDevice[]
+  >([])
+
+  const [
+    registeredDevices,
+    setRegisteredDevices,
+  ] = useState<
+    RegisteredDevice[]
+  >([])
 
   const [
     scanCompleted,
@@ -43,20 +57,30 @@ function DiscoveryDialog({
   ] = useState(false)
 
   const [
-    testingDeviceKey,
-    setTestingDeviceKey,
-  ] = useState<string | null>(null)
+    registeringDeviceKey,
+    setRegisteringDeviceKey,
+  ] = useState<
+    string | null
+  >(null)
 
   const [
-    testMessages,
-    setTestMessages,
-  ] = useState<Record<string, string>>({})
+    registrationMessages,
+    setRegistrationMessages,
+  ] = useState<
+    Record<string, string>
+  >({})
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) {
+      return
+    }
 
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
+    function handleKeyDown(
+      event: KeyboardEvent,
+    ) {
+      if (
+        event.key === 'Escape'
+      ) {
         onClose()
       }
     }
@@ -72,7 +96,18 @@ function DiscoveryDialog({
         handleKeyDown,
       )
     }
-  }, [isOpen, onClose])
+  }, [
+    isOpen,
+    onClose,
+  ])
+
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    void loadRegisteredDevices()
+  }, [isOpen])
 
   useEffect(() => {
     if (isOpen) {
@@ -82,17 +117,37 @@ function DiscoveryDialog({
     setIsScanning(false)
     setProviderStates([])
     setDiscoveredDevices([])
+    setRegisteredDevices([])
     setScanCompleted(false)
-    setTestingDeviceKey(null)
-    setTestMessages({})
+    setRegisteringDeviceKey(null)
+    setRegistrationMessages({})
   }, [isOpen])
 
   if (!isOpen) {
     return null
   }
 
+  async function loadRegisteredDevices() {
+    try {
+      const devices =
+        await getRegisteredDevices()
+
+      setRegisteredDevices(
+        devices,
+      )
+    } catch (error) {
+      console.error(
+        'Unable to load registered Equipment devices:',
+        error,
+      )
+    }
+  }
+
   function handleBackdropPointerDown(
-    event: React.PointerEvent<HTMLDivElement>,
+    event:
+      React.PointerEvent<
+        HTMLDivElement
+      >,
   ) {
     if (
       event.target ===
@@ -111,8 +166,8 @@ function DiscoveryDialog({
     setScanCompleted(false)
     setProviderStates([])
     setDiscoveredDevices([])
-    setTestingDeviceKey(null)
-    setTestMessages({})
+    setRegisteringDeviceKey(null)
+    setRegistrationMessages({})
 
     try {
       const result =
@@ -139,7 +194,9 @@ function DiscoveryDialog({
                 const next =
                   [...current]
 
-                next[existingIndex] =
+                next[
+                  existingIndex
+                ] =
                   providerState
 
                 return next
@@ -162,21 +219,10 @@ function DiscoveryDialog({
     }
   }
 
-  async function handleSamsungMenuTest(
+  async function handleRegisterDevice(
     device: DiscoveredDevice,
     index: number,
   ) {
-    if (
-      device.providerId !==
-      'samsung'
-    ) {
-      return
-    }
-
-    if (!device.address) {
-      return
-    }
-
     const deviceKey =
       createDeviceKey(
         device,
@@ -184,50 +230,95 @@ function DiscoveryDialog({
       )
 
     if (
-      testingDeviceKey !== null
+      registeringDeviceKey !==
+      null
     ) {
       return
     }
 
-    setTestingDeviceKey(
+    setRegisteringDeviceKey(
       deviceKey,
     )
 
-    setTestMessages(
+    setRegistrationMessages(
       (current) => ({
         ...current,
         [deviceKey]:
-          'Connecting to TV. Watch the television for an authorization prompt...',
+          'Adding device to Equipment...',
       }),
     )
 
     try {
-      const result =
-        await testSamsungMenu(
-          device.address,
-        )
+      const registered =
+        await registerDevice({
+          providerId:
+            device.providerId,
 
-      setTestMessages(
+          providerDeviceId:
+            device.providerDeviceId,
+
+          name:
+            device.name,
+
+          manufacturer:
+            device.manufacturer,
+
+          model:
+            device.model,
+
+          address:
+            device.address,
+        })
+
+      setRegisteredDevices(
+        (current) => {
+          const existingIndex =
+            current.findIndex(
+              (candidate) =>
+                candidate.id ===
+                registered.id,
+            )
+
+          if (
+            existingIndex >= 0
+          ) {
+            const next =
+              [...current]
+
+            next[
+              existingIndex
+            ] =
+              registered
+
+            return next
+          }
+
+          return [
+            ...current,
+            registered,
+          ]
+        },
+      )
+
+      setRegistrationMessages(
         (current) => ({
           ...current,
           [deviceKey]:
-            result.authorized
-              ? 'Command sent. The Samsung menu should now be visible.'
-              : 'The TV connected, but authorization was not completed.',
+            'Device added to Equipment.',
         }),
       )
     } catch (error) {
-      setTestMessages(
+      setRegistrationMessages(
         (current) => ({
           ...current,
           [deviceKey]:
             error instanceof Error
               ? error.message
-              : 'Samsung menu test failed.',
+              : 'Unable to add device.',
         }),
       )
     } finally {
-      setTestingDeviceKey(
+      setRegisteringDeviceKey(
         null,
       )
     }
@@ -254,8 +345,9 @@ function DiscoveryDialog({
             </h2>
 
             <p>
-              Scan the local network for devices supported
-              by Equipment.
+              Scan the local network for
+              devices supported by
+              Equipment.
             </p>
           </div>
 
@@ -276,8 +368,9 @@ function DiscoveryDialog({
               0 && (
               <div className="discovery-idle-state">
                 <p>
-                  Equipment will ask each available device
-                  provider to search for compatible
+                  Equipment will ask each
+                  available device provider
+                  to search for compatible
                   hardware.
                 </p>
 
@@ -306,8 +399,9 @@ function DiscoveryDialog({
                   </h3>
 
                   <p>
-                    Each provider searches independently
-                    for devices it understands.
+                    Each provider searches
+                    independently for
+                    devices it understands.
                   </p>
                 </div>
 
@@ -364,13 +458,15 @@ function DiscoveryDialog({
                   0 && (
                   <div className="discovery-no-results">
                     <h3>
-                      No compatible devices found.
+                      No compatible
+                      devices found.
                     </h3>
 
                     <p>
-                      Equipment did not receive any devices
-                      from the currently available
-                      providers.
+                      Equipment did not
+                      receive any devices
+                      from the currently
+                      available providers.
                     </p>
                   </div>
                 )}
@@ -394,15 +490,14 @@ function DiscoveryDialog({
                             index,
                           )
 
-                        const canTestSamsung =
-                          device.providerId ===
-                            'samsung' &&
-                          Boolean(
-                            device.address,
+                        const registered =
+                          findRegisteredDevice(
+                            registeredDevices,
+                            device,
                           )
 
-                        const isTesting =
-                          testingDeviceKey ===
+                        const isRegistering =
+                          registeringDeviceKey ===
                           deviceKey
 
                         return (
@@ -445,12 +540,20 @@ function DiscoveryDialog({
                                 )}
                               </div>
 
-                              {testMessages[
+                              {registered && (
+                                <p>
+                                  Registered
+                                  with
+                                  Equipment
+                                </p>
+                              )}
+
+                              {registrationMessages[
                                 deviceKey
                               ] && (
                                 <p>
                                   {
-                                    testMessages[
+                                    registrationMessages[
                                       deviceKey
                                     ]
                                   }
@@ -458,35 +561,28 @@ function DiscoveryDialog({
                               )}
                             </div>
 
-                            {canTestSamsung ? (
-                              <button
-                                type="button"
-                                className="equipment-secondary-button"
-                                disabled={
-                                  testingDeviceKey !==
+                            <button
+                              type="button"
+                              className="equipment-secondary-button"
+                              disabled={
+                                registered !==
+                                  undefined ||
+                                registeringDeviceKey !==
                                   null
-                                }
-                                onClick={() =>
-                                  void handleSamsungMenuTest(
-                                    device,
-                                    index,
-                                  )
-                                }
-                              >
-                                {isTesting
-                                  ? 'Connecting...'
-                                  : 'Test Menu'}
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                className="equipment-secondary-button"
-                                disabled
-                                title="Device registration will be added after discovery."
-                              >
-                                Add Device
-                              </button>
-                            )}
+                              }
+                              onClick={() =>
+                                void handleRegisterDevice(
+                                  device,
+                                  index,
+                                )
+                              }
+                            >
+                              {registered
+                                ? 'Added'
+                                : isRegistering
+                                  ? 'Adding...'
+                                  : 'Add Device'}
+                            </button>
                           </article>
                         )
                       },
@@ -541,7 +637,10 @@ function DiscoveryDialog({
 }
 
 function formatProviderStatus(
-  status: ProviderDiscoveryState['status'],
+  status:
+    ProviderDiscoveryState[
+      'status'
+    ],
 ): string {
   switch (status) {
     case 'idle':
@@ -556,6 +655,44 @@ function formatProviderStatus(
     case 'failed':
       return 'Failed'
   }
+}
+
+function findRegisteredDevice(
+  registeredDevices:
+    RegisteredDevice[],
+  discoveredDevice:
+    DiscoveredDevice,
+): RegisteredDevice | undefined {
+  if (
+    discoveredDevice.providerDeviceId
+  ) {
+    const byProviderIdentity =
+      registeredDevices.find(
+        (device) =>
+          device.providerId ===
+            discoveredDevice.providerId &&
+          device.providerDeviceId ===
+            discoveredDevice.providerDeviceId,
+      )
+
+    if (byProviderIdentity) {
+      return byProviderIdentity
+    }
+  }
+
+  if (
+    discoveredDevice.address
+  ) {
+    return registeredDevices.find(
+      (device) =>
+        device.providerId ===
+          discoveredDevice.providerId &&
+        device.address ===
+          discoveredDevice.address,
+    )
+  }
+
+  return undefined
 }
 
 function createDeviceKey(

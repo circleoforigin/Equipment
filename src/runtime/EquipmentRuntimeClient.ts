@@ -19,6 +19,26 @@ export interface SamsungRuntimeDevice {
   address?: string
 }
 
+export interface RegisterDeviceInput {
+  providerId: string
+  providerDeviceId?: string
+  name: string
+  manufacturer?: string
+  model?: string
+  address?: string
+}
+
+export interface RegisteredDevice {
+  id: string
+  providerId: string
+  providerDeviceId?: string
+  name: string
+  manufacturer?: string
+  model?: string
+  address?: string
+  addedAt: string
+}
+
 export interface SamsungMenuTestResult {
   connected: boolean
   authorized: boolean
@@ -89,6 +109,123 @@ export async function discoverSamsungDevices():
     if (!isSamsungRuntimeDevice(value)) {
       throw new Error(
         'Samsung discovery returned an invalid device.',
+      )
+    }
+
+    devices.push(value)
+  }
+
+  return devices
+}
+
+export async function registerDevice(
+  input: RegisterDeviceInput,
+): Promise<RegisteredDevice> {
+  const response = await fetch(
+    `${runtimeUrl}/devices`,
+    {
+      method: 'POST',
+
+      /*
+       * We intentionally keep this request
+       * CORS-simple for the moment.
+       *
+       * The runtime does not yet have its
+       * production authorization/preflight
+       * boundary.
+       */
+      body: JSON.stringify(
+        input,
+      ),
+    },
+  )
+
+  if (!response.ok) {
+    const message =
+      await readRuntimeError(
+        response,
+      )
+
+    throw new Error(
+      message ??
+      `Device registration returned HTTP ${response.status}.`,
+    )
+  }
+
+  const body =
+    await response.json() as unknown
+
+  if (
+    typeof body !== 'object' ||
+    body === null
+  ) {
+    throw new Error(
+      'Device registration returned an invalid response.',
+    )
+  }
+
+  const candidate =
+    body as Record<string, unknown>
+
+  if (
+    !isRegisteredDevice(
+      candidate.device,
+    )
+  ) {
+    throw new Error(
+      'Device registration did not return a valid device.',
+    )
+  }
+
+  return candidate.device
+}
+
+export async function getRegisteredDevices():
+  Promise<RegisteredDevice[]> {
+  const response = await fetch(
+    `${runtimeUrl}/devices`,
+  )
+
+  if (!response.ok) {
+    const message =
+      await readRuntimeError(
+        response,
+      )
+
+    throw new Error(
+      message ??
+      `Device Registry returned HTTP ${response.status}.`,
+    )
+  }
+
+  const body =
+    await response.json() as unknown
+
+  if (
+    typeof body !== 'object' ||
+    body === null
+  ) {
+    throw new Error(
+      'Device Registry returned an invalid response.',
+    )
+  }
+
+  const candidate =
+    body as Record<string, unknown>
+
+  if (!Array.isArray(candidate.devices)) {
+    throw new Error(
+      'Device Registry response did not contain a device list.',
+    )
+  }
+
+  const devices:
+    RegisteredDevice[] = []
+
+  for (const value of candidate.devices) {
+    if (!isRegisteredDevice(value)) {
+      throw new Error(
+        'Device Registry returned an invalid device.',
       )
     }
 
@@ -180,6 +317,43 @@ function isSamsungRuntimeDevice(
 
   return (
     typeof candidate.name ===
+      'string' &&
+    optionalString(
+      candidate.providerDeviceId,
+    ) &&
+    optionalString(
+      candidate.manufacturer,
+    ) &&
+    optionalString(
+      candidate.model,
+    ) &&
+    optionalString(
+      candidate.address,
+    )
+  )
+}
+
+function isRegisteredDevice(
+  value: unknown,
+): value is RegisteredDevice {
+  if (
+    typeof value !== 'object' ||
+    value === null
+  ) {
+    return false
+  }
+
+  const candidate =
+    value as Record<string, unknown>
+
+  return (
+    typeof candidate.id ===
+      'string' &&
+    typeof candidate.providerId ===
+      'string' &&
+    typeof candidate.name ===
+      'string' &&
+    typeof candidate.addedAt ===
       'string' &&
     optionalString(
       candidate.providerDeviceId,

@@ -1,4 +1,5 @@
 import { createServer, } from 'node:http';
+import { getRegisteredDevices, registerDevice, } from './devices/DeviceRegistry.js';
 import { discoverSamsungDevices, } from './providers/samsung/SamsungDiscovery.js';
 import { testSamsungMenu, } from './providers/samsung/SamsungRemote.js';
 const HOST = '127.0.0.1';
@@ -11,6 +12,50 @@ const server = createServer(async (request, response) => {
             status: 'ok',
             version: '0.1.0',
         });
+        return;
+    }
+    if (request.method === 'GET' &&
+        request.url === '/devices') {
+        try {
+            const devices = await getRegisteredDevices();
+            sendJson(response, 200, {
+                devices,
+            });
+        }
+        catch (error) {
+            console.error('Failed to read Equipment device registry:', error);
+            sendJson(response, 500, {
+                error: error instanceof Error
+                    ? error.message
+                    : 'Failed to read Equipment device registry.',
+            });
+        }
+        return;
+    }
+    if (request.method === 'POST' &&
+        request.url === '/devices') {
+        try {
+            const body = await readJsonBody(request);
+            const input = parseRegisterDeviceInput(body);
+            if (!input) {
+                sendJson(response, 400, {
+                    error: 'Device registration request is invalid.',
+                });
+                return;
+            }
+            const device = await registerDevice(input);
+            sendJson(response, 200, {
+                device,
+            });
+        }
+        catch (error) {
+            console.error('Failed to register Equipment device:', error);
+            sendJson(response, 500, {
+                error: error instanceof Error
+                    ? error.message
+                    : 'Failed to register Equipment device.',
+            });
+        }
         return;
     }
     if (request.method === 'GET' &&
@@ -84,6 +129,40 @@ async function readJsonBody(request) {
     }
     const text = Buffer.concat(chunks).toString('utf8');
     return JSON.parse(text);
+}
+function parseRegisterDeviceInput(value) {
+    if (typeof value !== 'object' ||
+        value === null) {
+        return null;
+    }
+    const candidate = value;
+    if (typeof candidate.providerId !==
+        'string' ||
+        candidate.providerId.length ===
+            0 ||
+        typeof candidate.name !==
+            'string' ||
+        candidate.name.length === 0) {
+        return null;
+    }
+    if (!optionalString(candidate.providerDeviceId) ||
+        !optionalString(candidate.manufacturer) ||
+        !optionalString(candidate.model) ||
+        !optionalString(candidate.address)) {
+        return null;
+    }
+    return {
+        providerId: candidate.providerId,
+        providerDeviceId: candidate.providerDeviceId,
+        name: candidate.name,
+        manufacturer: candidate.manufacturer,
+        model: candidate.model,
+        address: candidate.address,
+    };
+}
+function optionalString(value) {
+    return (value === undefined ||
+        typeof value === 'string');
 }
 function sendJson(response, statusCode, body) {
     response.writeHead(statusCode, {
