@@ -15,13 +15,6 @@ function normalizeProject(
   return {
     ...project,
 
-    roomIds:
-      Array.isArray(
-        project.roomIds,
-      )
-        ? project.roomIds
-        : [],
-
     controlIds:
       Array.isArray(
         project.controlIds,

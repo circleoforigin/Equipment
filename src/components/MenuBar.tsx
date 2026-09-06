@@ -4,25 +4,54 @@ import {
   useState,
 } from 'react'
 
-type MenuId = 'project' | 'devices' | 'settings'
+type MenuId =
+  | 'project'
+  | 'devices'
+  | 'settings'
 
 interface MenuBarProps {
+  hasActiveProject: boolean
+
+  onNewProject: () => void
+  onLoadProject: () => void
+  onSaveProject: () => void
+  onCloseProject: () => void
+  onDeleteProject: () => void
+
   onDiscoverDevices: () => void
   onShowDeviceRegistry: () => void
 }
 
 function MenuBar({
+  hasActiveProject,
+
+  onNewProject,
+  onLoadProject,
+  onSaveProject,
+  onCloseProject,
+  onDeleteProject,
+
   onDiscoverDevices,
   onShowDeviceRegistry,
 }: MenuBarProps) {
-  const menuBarRef = useRef<HTMLDivElement>(null)
-  const [openMenu, setOpenMenu] = useState<MenuId | null>(null)
+  const menuBarRef =
+    useRef<HTMLDivElement>(null)
+
+  const [
+    openMenu,
+    setOpenMenu,
+  ] = useState<MenuId | null>(null)
 
   useEffect(() => {
-    if (!openMenu) return
+    if (!openMenu) {
+      return
+    }
 
-    function handleOutsidePointerDown(event: PointerEvent) {
-      const target = event.target
+    function handleOutsidePointerDown(
+      event: PointerEvent,
+    ) {
+      const target =
+        event.target
 
       if (
         target instanceof Node &&
@@ -45,20 +74,22 @@ function MenuBar({
     }
   }, [openMenu])
 
-  function toggleMenu(menu: MenuId) {
+  function toggleMenu(
+    menu: MenuId,
+  ) {
     setOpenMenu(
-      (current) => current === menu ? null : menu,
+      (current) =>
+        current === menu
+          ? null
+          : menu,
     )
   }
 
-  function discoverDevices() {
+  function runMenuAction(
+    action: () => void,
+  ) {
     setOpenMenu(null)
-    onDiscoverDevices()
-  }
-
-  function showDeviceRegistry() {
-    setOpenMenu(null)
-    onShowDeviceRegistry()
+    action()
   }
 
   return (
@@ -70,7 +101,9 @@ function MenuBar({
         <button
           type="button"
           className="menu-item"
-          onClick={() => toggleMenu('project')}
+          onClick={() =>
+            toggleMenu('project')
+          }
         >
           Project
         </button>
@@ -80,7 +113,11 @@ function MenuBar({
             <button
               type="button"
               className="dropdown-item"
-              disabled
+              onClick={() =>
+                runMenuAction(
+                  onNewProject,
+                )
+              }
             >
               New Project...
             </button>
@@ -88,9 +125,56 @@ function MenuBar({
             <button
               type="button"
               className="dropdown-item"
-              disabled
+              onClick={() =>
+                runMenuAction(
+                  onLoadProject,
+                )
+              }
             >
               Load Project...
+            </button>
+
+            <div className="dropdown-separator" />
+
+            <button
+              type="button"
+              className="dropdown-item"
+              disabled={!hasActiveProject}
+              onClick={() =>
+                runMenuAction(
+                  onSaveProject,
+                )
+              }
+            >
+              Save Project
+            </button>
+
+            <button
+              type="button"
+              className="dropdown-item"
+              disabled={!hasActiveProject}
+              onClick={() =>
+                runMenuAction(
+                  onCloseProject,
+                )
+              }
+            >
+              Close Project
+            </button>
+
+            <div className="dropdown-separator" />
+
+            <button
+              type="button"
+              className="dropdown-item"
+              disabled={!hasActiveProject}
+              onClick={() =>
+                runMenuAction(
+                  onDeleteProject,
+                )
+              }
+            >
+              Delete Project...
             </button>
           </div>
         )}
@@ -100,7 +184,9 @@ function MenuBar({
         <button
           type="button"
           className="menu-item"
-          onClick={() => toggleMenu('devices')}
+          onClick={() =>
+            toggleMenu('devices')
+          }
         >
           Devices
         </button>
@@ -110,7 +196,11 @@ function MenuBar({
             <button
               type="button"
               className="dropdown-item"
-              onClick={discoverDevices}
+              onClick={() =>
+                runMenuAction(
+                  onDiscoverDevices,
+                )
+              }
             >
               Discover Devices...
             </button>
@@ -120,7 +210,11 @@ function MenuBar({
             <button
               type="button"
               className="dropdown-item"
-              onClick={showDeviceRegistry}
+              onClick={() =>
+                runMenuAction(
+                  onShowDeviceRegistry,
+                )
+              }
             >
               Device Registry
             </button>
@@ -132,7 +226,9 @@ function MenuBar({
         <button
           type="button"
           className="menu-item"
-          onClick={() => toggleMenu('settings')}
+          onClick={() =>
+            toggleMenu('settings')
+          }
         >
           Settings
         </button>
