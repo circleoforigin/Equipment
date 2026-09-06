@@ -2,6 +2,7 @@ import './App.css'
 
 import {
   useEffect,
+  useRef,
   useState,
 } from 'react'
 
@@ -16,6 +17,8 @@ import MenuBar from './components/MenuBar'
 import DiscoveryDialog from './discovery/DiscoveryDialog'
 import NewProjectDialog from './projects/NewProjectDialog'
 import LoadProjectDialog from './projects/LoadProjectDialog'
+import UnsavedChangesDialog from './projects/UnsavedChangesDialog'
+import DeleteProjectDialog from './projects/DeleteProjectDialog'
 
 import {
   useDeviceRegistry,
@@ -59,6 +62,31 @@ const [
   savedProjects,
   setSavedProjects,
 ] = useState<EquipmentProject[]>([])
+
+const [
+  isUnsavedChangesOpen,
+  setIsUnsavedChangesOpen,
+] = useState(false)
+
+const [
+  isDeleteProjectOpen,
+  setIsDeleteProjectOpen,
+] = useState(false)
+
+const [
+  isDeletingProject,
+  setIsDeletingProject,
+] = useState(false)
+
+const [
+  isSavingBeforeAction,
+  setIsSavingBeforeAction,
+] = useState(false)
+
+const pendingProjectActionRef =
+  useRef<(() => void) | null>(
+    null,
+  )
 
 const [
   isDeviceRegistryOpen,
@@ -333,19 +361,82 @@ const [
     }
   }
 
-  async function confirmReplaceActiveProject():
-    Promise<boolean> {
-    if (
-      !activeProject ||
-      !projectDirty
-    ) {
-      return true
+  function requestProjectAction(
+  action: () => void,
+) {
+  if (
+    !activeProject ||
+    !projectDirty
+  ) {
+    action()
+    return
+  }
+
+  pendingProjectActionRef.current =
+    action
+
+  setIsUnsavedChangesOpen(
+    true,
+  )
+}
+
+function cancelPendingProjectAction() {
+  pendingProjectActionRef.current =
+    null
+
+  setIsUnsavedChangesOpen(
+    false,
+  )
+}
+
+function discardAndContinue() {
+  const action =
+    pendingProjectActionRef.current
+
+  pendingProjectActionRef.current =
+    null
+
+  setIsUnsavedChangesOpen(
+    false,
+  )
+
+  action?.()
+}
+
+async function saveAndContinue() {
+  if (isSavingBeforeAction) {
+    return
+  }
+
+  setIsSavingBeforeAction(
+    true,
+  )
+
+  try {
+    const saved =
+      await saveActiveProject()
+
+    if (!saved) {
+      return
     }
 
-    return window.confirm(
-      `Project "${activeProject.name}" has unsaved changes.\n\nDiscard those changes and continue?`,
+    const action =
+      pendingProjectActionRef.current
+
+    pendingProjectActionRef.current =
+      null
+
+    setIsUnsavedChangesOpen(
+      false,
+    )
+
+    action?.()
+  } finally {
+    setIsSavingBeforeAction(
+      false,
     )
   }
+}
 
   /*
    * ------------------------------------------------------
@@ -353,15 +444,14 @@ const [
    * ------------------------------------------------------
    */
 
-  async function handleNewProject() {
-  const canContinue =
-    await confirmReplaceActiveProject()
-
-  if (!canContinue) {
-    return
-  }
-
-  setIsNewProjectOpen(true)
+  function handleNewProject() {
+  requestProjectAction(
+    () => {
+      setIsNewProjectOpen(
+        true,
+      )
+    },
+  )
 }
 
 async function createProject(
@@ -405,14 +495,15 @@ async function createProject(
   }
 }
 
-  async function handleLoadProject() {
-  const canContinue =
-    await confirmReplaceActiveProject()
+function handleLoadProject() {
+  requestProjectAction(
+    () => {
+      void openLoadProjectDialog()
+    },
+  )
+}
 
-  if (!canContinue) {
-    return
-  }
-
+  async function openLoadProjectDialog() {
   try {
     const projects =
       await projectRepository
@@ -478,69 +569,72 @@ async function loadSelectedProject(
     void saveActiveProject()
   }
 
-  async function handleCloseProject() {
-    if (!activeProject) {
+  function handleCloseProject() {
+  if (!activeProject) {
+    return
+  }
+
+  requestProjectAction(
+    closeProject,
+  )
+}
+
+ function handleDeleteProject() {
+  if (!activeProject) {
+    return
+  }
+
+  setIsDeleteProjectOpen(
+    true,
+  )
+}
+
+async function confirmDeleteProject() {
+  if (
+    !activeProject ||
+    isDeletingProject
+  ) {
+    return
+  }
+
+  const projectId =
+    activeProject.id
+
+  setIsDeletingProject(
+    true,
+  )
+
+  try {
+    const deleted =
+      await projectRepository
+        .deleteProject(
+          projectId,
+        )
+
+    if (!deleted) {
+      console.error(
+        '[Equipment] Project could not be deleted.',
+      )
+
       return
     }
 
-    if (projectDirty) {
-      const discard =
-        window.confirm(
-          `Project "${activeProject.name}" has unsaved changes.\n\nClose it and discard those changes?`,
-        )
-
-      if (!discard) {
-        return
-      }
-    }
+    setIsDeleteProjectOpen(
+      false,
+    )
 
     closeProject()
+  } catch (deleteError) {
+    console.error(
+      '[Equipment] Unable to delete project.',
+      deleteError,
+    )
+  } finally {
+    setIsDeletingProject(
+      false,
+    )
   }
-
-  async function handleDeleteProject() {
-    if (!activeProject) {
-      return
-    }
-
-    const project =
-      activeProject
-
-    const confirmed =
-      window.confirm(
-        `Delete Equipment project "${project.name}"?\n\nThis will delete only the Project. It will NOT delete Rooms, registered Devices, or device authorizations.`,
-      )
-
-    if (!confirmed) {
-      return
-    }
-
-    try {
-      const deleted =
-        await projectRepository
-          .deleteProject(
-            project.id,
-          )
-
-      if (!deleted) {
-        window.alert(
-          'The Equipment project could not be deleted.',
-        )
-
-        return
-      }
-
-      closeProject()
-    } catch (deleteError) {
-      console.error(
-        '[Equipment] Unable to delete project.',
-        deleteError,
-      )
-
-      window.alert(
-        'Unable to delete the Equipment project.',
-      )
-    }
-  }
+}
 
   /*
    * ------------------------------------------------------
@@ -682,6 +776,54 @@ async function loadSelectedProject(
 
         onLoad={
           loadSelectedProject
+        }
+      />
+
+      <UnsavedChangesDialog
+        isOpen={
+          isUnsavedChangesOpen
+        }
+
+        projectName={
+          activeProject?.name
+        }
+
+        isSaving={
+          isSavingBeforeAction
+        }
+
+        onCancel={
+          cancelPendingProjectAction
+        }
+
+        onDiscard={
+          discardAndContinue
+        }
+
+        onSave={
+          saveAndContinue
+        }
+      />
+
+      <DeleteProjectDialog
+        isOpen={
+          isDeleteProjectOpen
+        }
+
+        projectName={
+          activeProject?.name
+        }
+
+        isDeleting={
+          isDeletingProject
+        }
+
+        onCancel={() =>
+          setIsDeleteProjectOpen(false)
+        }
+
+        onDelete={
+          confirmDeleteProject
         }
       />
 
