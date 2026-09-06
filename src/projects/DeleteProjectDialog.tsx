@@ -1,16 +1,20 @@
+import type {
+  EquipmentProject,
+} from '../models/Project'
+
 interface DeleteProjectDialogProps {
   isOpen: boolean
-  projectName?: string
-  isDeleting: boolean
-  onCancel: () => void
-  onDelete: () => Promise<void>
+  projects: EquipmentProject[]
+  onClose: () => void
+  onDelete: (
+    project: EquipmentProject,
+  ) => Promise<void>
 }
 
 function DeleteProjectDialog({
   isOpen,
-  projectName,
-  isDeleting,
-  onCancel,
+  projects,
+  onClose,
   onDelete,
 }: DeleteProjectDialogProps) {
   if (!isOpen) {
@@ -25,39 +29,40 @@ function DeleteProjectDialog({
         </h2>
 
         <p>
-          Delete
-          {' '}
-          <strong>
-            {projectName ?? 'this project'}
-          </strong>
-          ?
+          Select a project to delete.
         </p>
 
-        <p>
-          This will delete only the Equipment Project.
-          Rooms, registered Devices, and device
-          authorizations will not be deleted.
-        </p>
+        <div className="project-picker-list">
+          {projects.length === 0 ? (
+            <p>
+              No projects available to delete.
+            </p>
+          ) : (
+            projects.map(
+              (project) => (
+                <button
+                  key={project.id}
+                  type="button"
+                  className="project-picker-item"
+                  onClick={() =>
+                    void onDelete(
+                      project,
+                    )
+                  }
+                >
+                  {project.name}
+                </button>
+              ),
+            )
+          )}
+        </div>
 
         <div className="dialog-buttons">
           <button
             type="button"
-            disabled={isDeleting}
-            onClick={onCancel}
+            onClick={onClose}
           >
             Cancel
-          </button>
-
-          <button
-            type="button"
-            disabled={isDeleting}
-            onClick={() =>
-              void onDelete()
-            }
-          >
-            {isDeleting
-              ? 'Deleting...'
-              : 'Delete'}
           </button>
         </div>
       </div>

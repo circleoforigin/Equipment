@@ -139,7 +139,6 @@ function MenuBar({
             <button
               type="button"
               className="dropdown-item"
-              disabled={!projectName}
               onClick={() =>
                 runMenuAction(
                   onSaveProject,
@@ -167,7 +166,6 @@ function MenuBar({
             <button
               type="button"
               className="dropdown-item"
-              disabled={!projectName}
               onClick={() =>
                 runMenuAction(
                   onDeleteProject,

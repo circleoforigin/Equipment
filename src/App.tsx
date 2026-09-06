@@ -74,11 +74,6 @@ const [
 ] = useState(false)
 
 const [
-  isDeletingProject,
-  setIsDeletingProject,
-] = useState(false)
-
-const [
   isSavingBeforeAction,
   setIsSavingBeforeAction,
 ] = useState(false)
@@ -261,7 +256,7 @@ const [
               activeProject.id,
           }
         },
-      )
+      )    
 
     const unregisterClose =
       moduleEventBus.registerRequestHandler(
@@ -301,6 +296,13 @@ const [
     activeProject,
     projectDirty,
   ])
+
+  const deletableProjects =
+      savedProjects.filter(
+        (project) =>
+          project.id !==
+          activeProject?.id,
+      )
 
   /*
    * ------------------------------------------------------
@@ -579,36 +581,50 @@ async function loadSelectedProject(
   )
 }
 
- function handleDeleteProject() {
-  if (!activeProject) {
-    return
-  }
+ async function handleDeleteProject() {
+  try {
+    const projects =
+      await projectRepository
+        .loadProjects()
 
-  setIsDeleteProjectOpen(
-    true,
-  )
+    const sortedProjects =
+      [...projects].sort(
+        (left, right) =>
+          left.name.localeCompare(
+            right.name,
+          ),
+      )
+
+    setSavedProjects(
+      sortedProjects,
+    )
+
+    setIsDeleteProjectOpen(
+      true,
+    )
+  } catch (loadError) {
+    console.error(
+      '[Equipment] Unable to load projects for deletion.',
+      loadError,
+    )
+  }
 }
 
-async function confirmDeleteProject() {
+async function handleDeleteSelectedProject(
+  project: EquipmentProject,
+) {
   if (
-    !activeProject ||
-    isDeletingProject
+    project.id ===
+    activeProject?.id
   ) {
     return
   }
-
-  const projectId =
-    activeProject.id
-
-  setIsDeletingProject(
-    true,
-  )
 
   try {
     const deleted =
       await projectRepository
         .deleteProject(
-          projectId,
+          project.id,
         )
 
     if (!deleted) {
@@ -619,22 +635,30 @@ async function confirmDeleteProject() {
       return
     }
 
-    setIsDeleteProjectOpen(
-      false,
-    )
+    const projects =
+      await projectRepository
+        .loadProjects()
 
-    closeProject()
+    const sortedProjects =
+      [...projects].sort(
+        (left, right) =>
+          left.name.localeCompare(
+            right.name,
+          ),
+      )
+
+    setSavedProjects(
+      sortedProjects,
+    )
   } catch (deleteError) {
     console.error(
       '[Equipment] Unable to delete project.',
       deleteError,
     )
-  } finally {
-    setIsDeletingProject(
-      false,
-    )
   }
 }
+
+
 
   /*
    * ------------------------------------------------------
@@ -806,26 +830,22 @@ async function confirmDeleteProject() {
       />
 
       <DeleteProjectDialog
-        isOpen={
-          isDeleteProjectOpen
-        }
+  isOpen={
+    isDeleteProjectOpen
+  }
 
-        projectName={
-          activeProject?.name
-        }
+  projects={
+    deletableProjects
+  }
 
-        isDeleting={
-          isDeletingProject
-        }
+  onClose={() =>
+    setIsDeleteProjectOpen(false)
+  }
 
-        onCancel={() =>
-          setIsDeleteProjectOpen(false)
-        }
-
-        onDelete={
-          confirmDeleteProject
-        }
-      />
+  onDelete={
+    handleDeleteSelectedProject
+  }
+/>
 
       <DiscoveryDialog
         isOpen={isDiscoveryOpen}
