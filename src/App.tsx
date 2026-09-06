@@ -20,6 +20,18 @@ import LoadProjectDialog from './projects/LoadProjectDialog'
 import UnsavedChangesDialog from './projects/UnsavedChangesDialog'
 import DeleteProjectDialog from './projects/DeleteProjectDialog'
 
+import NewRoomDialog, {
+  type NewRoomData,
+} from './components/NewRoomDialog'
+
+import type {
+  EquipmentRoom,
+} from './models/Room'
+
+import {
+  roomRepository,
+} from './rooms/RoomRepository'
+
 import {
   useDeviceRegistry,
 } from './devices/useDeviceRegistry'
@@ -76,6 +88,11 @@ const [
 const [
   isSavingBeforeAction,
   setIsSavingBeforeAction,
+] = useState(false)
+
+const [
+  isNewRoomOpen,
+  setIsNewRoomOpen,
 ] = useState(false)
 
 const pendingProjectActionRef =
@@ -658,6 +675,44 @@ async function handleDeleteSelectedProject(
   }
 }
 
+async function createRoom(
+  data: NewRoomData,
+) {
+  const now =
+    new Date().toISOString()
+
+  const isSquare =
+    data.shape === 'square'
+
+  const room: EquipmentRoom = {
+    id: crypto.randomUUID(),
+
+    name: data.name,
+
+    width:
+      isSquare ? 1 : 1.5,
+
+    height: 1,
+
+    devices: [],
+
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  try {
+    await roomRepository.saveRoom(
+      room,
+    )
+
+    setIsNewRoomOpen(false)
+  } catch (createError) {
+    console.error(
+      '[Equipment] Unable to create Room.',
+      createError,
+    )
+  }
+}
 
 
   /*
@@ -742,6 +797,14 @@ async function handleDeleteSelectedProject(
           void handleDeleteProject()
         }}
 
+        onNewRoom={() => {
+          setIsNewRoomOpen(true)
+        }}
+
+        onManageRooms={() => {
+          // Room Manager comes next.
+        }}
+
         onDiscoverDevices={
           openDiscovery
         }
@@ -770,6 +833,16 @@ async function handleDeleteSelectedProject(
     <div className="equipment-project-workspace" />
   )}
 </main>
+
+{isNewRoomOpen && (
+  <NewRoomDialog
+    onCancel={() =>
+      setIsNewRoomOpen(false)
+    }
+
+    onCreate={createRoom}
+  />
+)}
 
       <NewProjectDialog
         isOpen={

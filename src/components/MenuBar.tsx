@@ -6,6 +6,7 @@ import {
 
 type MenuId =
   | 'project'
+  | 'rooms'
   | 'devices'
   | 'settings'
 
@@ -17,6 +18,9 @@ interface MenuBarProps {
   onSaveProject: () => void
   onCloseProject: () => void
   onDeleteProject: () => void
+
+  onNewRoom: () => void
+  onManageRooms: () => void
 
   onDiscoverDevices: () => void
   onShowDeviceRegistry: () => void
@@ -30,7 +34,8 @@ function MenuBar({
   onSaveProject,
   onCloseProject,
   onDeleteProject,
-
+  onNewRoom,
+  onManageRooms,
   onDiscoverDevices,
   onShowDeviceRegistry,
 }: MenuBarProps) {
@@ -173,6 +178,48 @@ function MenuBar({
               }
             >
               Delete Project...
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="menu-group">
+        <button
+          type="button"
+          className="menu-item"
+          onClick={() =>
+            toggleMenu('rooms')
+          }
+        >
+          Rooms
+        </button>
+
+        {openMenu === 'rooms' && (
+          <div className="dropdown-menu">
+            <button
+              type="button"
+              className="dropdown-item"
+              onClick={() =>
+                runMenuAction(
+                  onNewRoom,
+                )
+              }
+            >
+              New Room...
+            </button>
+
+            <div className="dropdown-separator" />
+
+            <button
+              type="button"
+              className="dropdown-item"
+              onClick={() =>
+                runMenuAction(
+                  onManageRooms,
+                )
+              }
+            >
+              Manage Rooms...
             </button>
           </div>
         )}
