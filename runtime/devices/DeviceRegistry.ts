@@ -123,6 +123,35 @@ export async function registerDevice(
   return device
 }
 
+export async function removeRegisteredDevice(
+  id: string,
+): Promise<boolean> {
+  const registry =
+    await readRegistry()
+
+  const remainingDevices =
+    registry.devices.filter(
+      (device) =>
+        device.id !== id,
+    )
+
+  if (
+    remainingDevices.length ===
+    registry.devices.length
+  ) {
+    return false
+  }
+
+  registry.devices =
+    remainingDevices
+
+  await writeRegistry(
+    registry,
+  )
+
+  return true
+}
+
 function findExistingDevice(
   devices: RegisteredDevice[],
   input: RegisterDeviceInput,

@@ -20,6 +20,7 @@ function App() {
   isLoading,
   error,
   reload,
+  removeDevice,
 } = useDeviceRegistry()
 
   function openDiscovery() {
@@ -30,6 +31,37 @@ function App() {
     setIsDiscoveryOpen(false)
     void reload()
   }
+
+  async function handleRemoveDevice(
+  id: string,
+  name: string,
+) {
+  const confirmed =
+    window.confirm(
+      `Remove "${name}" from Equipment?`,
+    )
+
+  if (!confirmed) {
+    return
+  }
+
+  try {
+    await removeDevice(
+      id,
+    )
+  } catch (removeError) {
+    console.error(
+      '[Equipment] Failed to remove device.',
+      removeError,
+    )
+
+    window.alert(
+      removeError instanceof Error
+        ? removeError.message
+        : 'Unable to remove device.',
+    )
+  }
+}
 
   function showDeviceRegistry() {
     registryRef.current?.scrollIntoView({
@@ -154,6 +186,17 @@ function App() {
     </span>
   )}
 </div>
+<button
+  type="button"
+  onClick={() => {
+    void handleRemoveDevice(
+      device.id,
+      device.name,
+    )
+  }}
+>
+  Remove Device
+</button>
                   </article>
                 ))}
               </div>

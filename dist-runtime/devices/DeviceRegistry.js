@@ -40,6 +40,18 @@ export async function registerDevice(input) {
     await writeRegistry(registry);
     return device;
 }
+export async function removeRegisteredDevice(id) {
+    const registry = await readRegistry();
+    const remainingDevices = registry.devices.filter((device) => device.id !== id);
+    if (remainingDevices.length ===
+        registry.devices.length) {
+        return false;
+    }
+    registry.devices =
+        remainingDevices;
+    await writeRegistry(registry);
+    return true;
+}
 function findExistingDevice(devices, input) {
     if (input.providerDeviceId) {
         const byProviderIdentity = devices.find((device) => device.providerId ===

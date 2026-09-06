@@ -235,6 +235,56 @@ export async function getRegisteredDevices():
   return devices
 }
 
+export async function removeRegisteredDevice(
+  id: string,
+): Promise<void> {
+  const response = await fetch(
+    `${runtimeUrl}/devices/remove`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        id,
+      }),
+    },
+  )
+
+  if (!response.ok) {
+    const message =
+      await readRuntimeError(
+        response,
+      )
+
+    throw new Error(
+      message ??
+      `Device removal returned HTTP ${response.status}.`,
+    )
+  }
+
+  const body =
+    await response.json() as unknown
+
+  if (
+    typeof body !== 'object' ||
+    body === null
+  ) {
+    throw new Error(
+      'Device removal returned an invalid response.',
+    )
+  }
+
+  const candidate =
+    body as Record<
+      string,
+      unknown
+    >
+
+  if (candidate.removed !== true) {
+    throw new Error(
+      'Equipment runtime did not confirm device removal.',
+    )
+  }
+}
+
 export async function testSamsungMenu(
   address: string,
 ): Promise<SamsungMenuTestResult> {

@@ -6,6 +6,7 @@ import {
 
 import {
   getRegisteredDevices,
+  removeRegisteredDevice,
   type RegisteredDevice,
 } from '../runtime/EquipmentRuntimeClient'
 
@@ -60,6 +61,20 @@ export function useDeviceRegistry() {
       [],
     )
 
+    const removeDevice =
+  useCallback(
+    async (
+      id: string,
+    ) => {
+      await removeRegisteredDevice(
+        id,
+      )
+
+      await reload()
+    },
+    [reload],
+  )
+
   useEffect(() => {
     void reload()
   }, [reload])
@@ -69,5 +84,6 @@ export function useDeviceRegistry() {
     isLoading,
     error,
     reload,
+    removeDevice,
   }
 }

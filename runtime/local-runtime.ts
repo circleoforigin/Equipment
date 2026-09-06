@@ -7,6 +7,7 @@ import {
 import {
   getRegisteredDevices,
   registerDevice,
+  removeRegisteredDevice,
   type RegisterDeviceInput,
 } from './devices/DeviceRegistry.js'
 
@@ -92,7 +93,7 @@ const server = createServer(
     if (
       request.method === 'POST' &&
       request.url === '/devices'
-    ) {
+      ) {
       try {
         const body =
           await readJsonBody(
@@ -149,6 +150,101 @@ const server = createServer(
 
       return
     }
+
+    if (
+  request.method === 'POST' &&
+  request.url === '/devices/remove'
+) {
+  try {
+    const body =
+      await readJsonBody(
+        request,
+      )
+
+    if (
+      typeof body !== 'object' ||
+      body === null
+    ) {
+      sendJson(
+        response,
+        400,
+        {
+          error:
+            'Device removal request is invalid.',
+        },
+      )
+
+      return
+    }
+
+    const candidate =
+      body as Record<
+        string,
+        unknown
+      >
+
+    if (
+      typeof candidate.id !==
+        'string' ||
+      candidate.id.length === 0
+    ) {
+      sendJson(
+        response,
+        400,
+        {
+          error:
+            'Device id is required.',
+        },
+      )
+
+      return
+    }
+
+    const removed =
+      await removeRegisteredDevice(
+        candidate.id,
+      )
+
+    if (!removed) {
+      sendJson(
+        response,
+        404,
+        {
+          error:
+            'Registered device was not found.',
+        },
+      )
+
+      return
+    }
+
+    sendJson(
+      response,
+      200,
+      {
+        removed: true,
+      },
+    )
+  } catch (error) {
+    console.error(
+      'Failed to remove Equipment device:',
+      error,
+    )
+
+    sendJson(
+      response,
+      500,
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to remove Equipment device.',
+      },
+    )
+  }
+
+  return
+}
 
     if (
       request.method === 'GET' &&
