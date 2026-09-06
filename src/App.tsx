@@ -795,11 +795,7 @@ async function createRoom(
 
         onDeleteProject={() => {
           void handleDeleteProject()
-        }}
-
-        onNewRoom={() => {
-          setIsNewRoomOpen(true)
-        }}
+        }}        
 
         onManageRooms={() => {
           // Room Manager comes next.
