@@ -150,6 +150,13 @@ const [
   'registered',
 )
 
+const [
+  selectedRegisteredDeviceId,
+  setSelectedRegisteredDeviceId,
+] = useState<string | null>(
+  null,
+)
+
   function handleChooseRoom(
     room: EquipmentRoom,
   ) {
@@ -369,6 +376,30 @@ const [
   } finally {
     setIsDiscovering(false)
   }
+}
+
+function handleForgetDevice() {
+  if (
+    !draftRoom ||
+    !selectedRegisteredDeviceId
+  ) {
+    return
+  }
+
+  setDraftRoom({
+    ...draftRoom,
+
+    registeredDeviceIds:
+      draftRoom.registeredDeviceIds.filter(
+        (deviceId) =>
+          deviceId !==
+          selectedRegisteredDeviceId,
+      ),
+  })
+
+  setSelectedRegisteredDeviceId(
+    null,
+  )
 }
 
 async function handleRegisterToRoom() {
@@ -1002,10 +1033,18 @@ async function handleConnect() {
     </button>
 
     <button
-      type="button"
-      disabled
+        type="button"
+        disabled={
+            hardwareView !==
+            'registered' ||
+            selectedRegisteredDeviceId ===
+            null
+        }
+        onClick={
+            handleForgetDevice
+        }
     >
-      Forget
+        Forget
     </button>
   </div>
 )}
@@ -1161,10 +1200,25 @@ async function handleConnect() {
             ),
           )
           .map((device) => (
-            <div
-              key={device.id}
-              className="room-hardware-device"
-            >
+            <button
+  key={device.id}
+  type="button"
+  className={[
+    'room-hardware-device',
+
+    selectedRegisteredDeviceId ===
+    device.id
+      ? 'selected'
+      : '',
+  ]
+    .filter(Boolean)
+    .join(' ')}
+  onClick={() =>
+    setSelectedRegisteredDeviceId(
+      device.id,
+    )
+  }
+>
               <strong>
                 {device.name}
               </strong>
@@ -1174,7 +1228,7 @@ async function handleConnect() {
                   {device.model}
                 </div>
               )}
-            </div>
+            </button>
           ))
       )}
     </>
