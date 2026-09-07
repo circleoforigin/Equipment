@@ -108,6 +108,13 @@ function RoomManagerDialog({
   )
 
   const [
+    selectedFeatureDeviceId,
+    setSelectedFeatureDeviceId,
+  ] = useState<string>(
+    '',
+  )
+
+  const [
     activeTab,
     setActiveTab,
   ] = useState<RoomManagerTab>(
@@ -268,39 +275,56 @@ const [
   }
 
   function handleAddPlacement() {
-    if (!draftRoom) {
-      return
+  if (
+    !draftRoom ||
+    !selectedFeatureDeviceId
+  ) {
+    return
+  }
+
+  const device =
+    devices.find(
+      (candidate) =>
+        candidate.id ===
+        selectedFeatureDeviceId,
+    )
+
+  if (!device) {
+    return
+  }
+
+  const placement:
+    RoomDevicePlacement = {
+      id:
+        crypto.randomUUID(),
+
+      deviceId:
+        device.id,
+
+      name:
+        device.name,
+
+      position: {
+        x: 0,
+        y: 0,
+      },
+
+      rotation: 0,
     }
 
-    const placement:
-      RoomDevicePlacement = {
-        id:
-          crypto.randomUUID(),
+  setDraftRoom({
+    ...draftRoom,
 
-        deviceId: '',
+    devices: [
+      ...draftRoom.devices,
+      placement,
+    ],
+  })
 
-        name:
-          `Device ${
-            draftRoom.devices.length + 1
-          }`,
-
-        position: {
-          x: 0,
-          y: 0,
-        },
-
-        rotation: 0,
-      }
-
-    setDraftRoom({
-      ...draftRoom,
-
-      devices: [
-        ...draftRoom.devices,
-        placement,
-      ],
-    })
-  }
+  setSelectedFeatureDeviceId(
+    '',
+  )
+}
 
   function handleRemovePlacement(
     placementId: string,
@@ -877,19 +901,62 @@ async function handleConnect() {
                     </div>
 
                     <div className="room-feature-row">
-                      <label>
-                        Devices
-                      </label>
+  <label>
+    Devices
+  </label>
 
-                      <button
-                        type="button"
-                        onClick={
-                          handleAddPlacement
-                        }
-                      >
-                        + Add
-                      </button>
-                    </div>
+  <select
+    value={
+      selectedFeatureDeviceId
+    }
+    onChange={(event) =>
+      setSelectedFeatureDeviceId(
+        event.target.value,
+      )
+    }
+  >
+    <option value="">
+      Select registered device...
+    </option>
+
+    {devices
+      .filter((device) =>
+        draftRoom.registeredDeviceIds.includes(
+          device.id,
+        ),
+      )
+      .filter((device) =>
+        !draftRoom.devices.some(
+          (placement) =>
+            placement.deviceId ===
+            device.id,
+        ),
+      )
+      .map((device) => (
+        <option
+          key={device.id}
+          value={device.id}
+        >
+          {device.name}
+          {device.model
+            ? ` — ${device.model}`
+            : ''}
+        </option>
+      ))}
+  </select>
+
+  <button
+    type="button"
+    disabled={
+      !selectedFeatureDeviceId
+    }
+    onClick={
+      handleAddPlacement
+    }
+  >
+    + Add
+  </button>
+</div>
 
                     <div className="room-feature-section">
                       Placements
