@@ -1067,3 +1067,162 @@
 
   cursor: pointer;
 }
+
+.room-manager-features {
+  display: flex;
+  flex-direction: column;
+
+  height: 100%;
+  min-height: 0;
+
+  overflow-y: auto;
+}
+
+.room-manager-feature-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+
+  margin-top: auto;
+  padding: 12px 8px 8px;
+
+  border-top: 1px solid #45474e;
+}
+
+.room-manager-room-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 10px 14px;
+
+  border-bottom: 1px solid #45474e;
+}
+
+.room-manager-room-header h3 {
+  margin: 0;
+
+  color: #ffffff;
+}
+
+.room-layout-area {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: auto;
+
+  padding: 24px;
+
+  background: #202124;
+}
+
+.room-layout-canvas {
+  position: relative;
+  flex: 0 0 auto;
+
+  max-width: 100%;
+  max-height: 100%;
+
+  background:
+    linear-gradient(
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px
+    ),
+    #292b30;
+
+  background-size:
+    20px 20px;
+
+  border: 2px solid #5a5d65;
+
+  box-shadow:
+    0 8px 24px
+    rgba(0, 0, 0, 0.35);
+}
+
+.room-layout-name {
+  position: absolute;
+
+  top: 10px;
+  left: 12px;
+
+  color: #8f9299;
+
+  font-size: 12px;
+
+  pointer-events: none;
+}
+
+.room-layout-device {
+  position: absolute;
+
+  transform:
+    translate(-50%, -50%);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  cursor: grab;
+
+  user-select: none;
+  touch-action: none;
+}
+
+.room-layout-device:active {
+  cursor: grabbing;
+}
+
+.room-layout-device-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 28px;
+  height: 28px;
+
+  color: #ffffff;
+
+  background: #454850;
+
+  border: 1px solid #777b86;
+  border-radius: 4px;
+
+  box-shadow:
+    0 3px 8px
+    rgba(0, 0, 0, 0.35);
+}
+
+.room-layout-device-name {
+  margin-top: 4px;
+
+  max-width: 110px;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: #d8d8d8;
+
+  font-size: 11px;
+}
+
+.room-manager-placeholder {
+  flex: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #8f9299;
+}
