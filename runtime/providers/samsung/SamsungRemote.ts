@@ -29,16 +29,15 @@ export interface SamsungMenuTestResult {
   tokenReceived: boolean
 }
 
-export async function testSamsungMenu(
+export async function connectSamsung(
   address: string,
 ): Promise<SamsungMenuTestResult> {
   const existingToken =
     await getStoredToken(address)
 
   const token =
-    await connectAndSendKey(
+    await connectForAuthorization(
       address,
-      'KEY_MENU',
       existingToken,
     )
 
@@ -93,22 +92,18 @@ function createCredentialAccount(
   return `samsung:${address}`
 }
 
-function connectAndSendKey(
+function connectForAuthorization(
   address: string,
-  key: string,
   token?: string,
 ): Promise<string | undefined> {
   return new Promise(
     (resolve, reject) => {
-      const url =
-        createRemoteUrl(
-          address,
-          token,
-        )
-
       const socket =
         new WebSocket(
-          url,
+          createRemoteUrl(
+            address,
+            token,
+          ),
           {
             rejectUnauthorized: false,
             handshakeTimeout:
@@ -132,19 +127,18 @@ function connectAndSendKey(
 
       function succeed(
         receivedToken?: string,
-      ): void {
+      ) {
         if (settled) {
           return
         }
 
         settled = true
-
         clearTimeout(timeout)
 
         try {
           socket.close()
         } catch {
-          // Socket may already be closed.
+          // Already closed.
         }
 
         resolve(
@@ -154,19 +148,18 @@ function connectAndSendKey(
 
       function fail(
         error: Error,
-      ): void {
+      ) {
         if (settled) {
           return
         }
 
         settled = true
-
         clearTimeout(timeout)
 
         try {
           socket.close()
         } catch {
-          // Socket may already be closed.
+          // Already closed.
         }
 
         reject(error)
@@ -176,40 +169,22 @@ function connectAndSendKey(
         'message',
         (data: RawData) => {
           const message =
-            parseConnectMessage(
-              data,
-            )
-
-          if (!message) {
-            return
-          }
+            parseConnectMessage(data)
 
           if (
-            message.event !==
+            message?.event !==
             'ms.channel.connect'
           ) {
             return
           }
 
           const receivedToken =
-            typeof message.data
-              ?.token === 'string'
+            typeof message.data?.token ===
+            'string'
               ? message.data.token
               : undefined
 
-          sendRemoteKey(
-            socket,
-            key,
-          )
-
-          setTimeout(
-            () => {
-              succeed(
-                receivedToken,
-              )
-            },
-            300,
-          )
+          succeed(receivedToken)
         },
       )
 
@@ -264,26 +239,6 @@ function createRemoteUrl(
     '/api/v2/channels/' +
     'samsung.remote.control?' +
     parameters.toString()
-  )
-}
-
-function sendRemoteKey(
-  socket: WebSocket,
-  key: string,
-): void {
-  socket.send(
-    JSON.stringify({
-      method:
-        'ms.remote.control',
-
-      params: {
-        Cmd: 'Click',
-        DataOfCmd: key,
-        Option: 'false',
-        TypeOfRemote:
-          'SendRemoteKey',
-      },
-    }),
   )
 }
 

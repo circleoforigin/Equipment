@@ -15,10 +15,6 @@ import {
   discoverSamsungDevices,
 } from './providers/samsung/SamsungDiscovery.js'
 
-import {
-  testSamsungMenu,
-} from './providers/samsung/SamsungRemote.js'
-
 const HOST = '127.0.0.1'
 
 const PORT = Number.parseInt(
@@ -281,87 +277,7 @@ const server = createServer(
       }
 
       return
-    }
-
-    if (
-      request.method === 'POST' &&
-      request.url ===
-        '/providers/samsung/test-menu'
-    ) {
-      try {
-        const body =
-          await readJsonBody(
-            request,
-          )
-
-        if (
-          typeof body !== 'object' ||
-          body === null
-        ) {
-          sendJson(
-            response,
-            400,
-            {
-              error:
-                'Request body must be an object.',
-            },
-          )
-
-          return
-        }
-
-        const candidate =
-          body as Record<
-            string,
-            unknown
-          >
-
-        if (
-          typeof candidate.address !==
-          'string'
-        ) {
-          sendJson(
-            response,
-            400,
-            {
-              error:
-                'Samsung device address is required.',
-            },
-          )
-
-          return
-        }
-
-        const result =
-          await testSamsungMenu(
-            candidate.address,
-          )
-
-        sendJson(
-          response,
-          200,
-          result,
-        )
-      } catch (error) {
-        console.error(
-          'Samsung menu test failed:',
-          error,
-        )
-
-        sendJson(
-          response,
-          500,
-          {
-            error:
-              error instanceof Error
-                ? error.message
-                : 'Samsung menu test failed.',
-          },
-        )
-      }
-
-      return
-    }
+    }    
 
     sendJson(
       response,
