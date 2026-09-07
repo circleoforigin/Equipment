@@ -803,7 +803,7 @@
 
 /* =========================
    ROOM MANAGER
-   Based on SACscape
+   Mirrors SACscape
    ========================= */
 
 .room-manager-dialog {
@@ -832,9 +832,9 @@
 
 .room-manager-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .room-manager-header h2 {
@@ -846,15 +846,15 @@
 .room-manager-header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .room-manager-header-actions button {
-  padding: 6px 12px;
+  padding: 6px 10px;
 
-  color: #eeeeee;
+  color: #d8d8d8;
+
   background: #34363c;
-
   border: 1px solid #45474e;
   border-radius: 4px;
 
@@ -863,6 +863,7 @@
 
 .room-manager-header-actions button:hover:not(:disabled) {
   background: #414349;
+  color: #ffffff;
 }
 
 .room-manager-header-actions button:disabled {
@@ -871,8 +872,6 @@
 }
 
 .room-manager-header-separator {
-  align-self: stretch;
-
   width: 1px;
   min-height: 24px;
 
@@ -891,7 +890,10 @@
   border: 1px solid #45474e;
 }
 
+/* LEFT PANEL */
+
 .room-manager-list {
+  min-width: 0;
   min-height: 0;
 
   overflow-y: auto;
@@ -908,11 +910,11 @@
   font-size: 12px;
   font-weight: 600;
 
-  border-bottom: 1px solid #45474e;
+  border-bottom: 1px solid #3a3c41;
 }
 
 .room-manager-empty {
-  padding: 14px 10px;
+  padding: 12px 10px;
 
   color: #8f9299;
 
@@ -920,22 +922,27 @@
 }
 
 .room-manager-room-entry {
+  appearance: none;
+
+  display: block;
+
   width: 100%;
   padding: 8px 10px;
 
-  background: transparent;
   color: #d8d8d8;
 
+  background: transparent;
   border: 0;
+  border-bottom: 1px solid #303238;
 
   text-align: left;
-  font: inherit;
 
   cursor: pointer;
 }
 
 .room-manager-room-entry:hover {
   background: #303238;
+  color: #ffffff;
 }
 
 .room-manager-room-entry.selected {
@@ -949,14 +956,16 @@
     var(--accent);
 }
 
-.room-manager-editor {
-  min-width: 0;
+/* ROOM FEATURES / HARDWARE */
+
+.room-manager-features {
+  height: 100%;
   min-height: 0;
 
   display: flex;
   flex-direction: column;
 
-  background: #25262a;
+  overflow-y: auto;
 }
 
 .room-manager-tabs {
@@ -969,12 +978,11 @@
 .room-manager-tabs button {
   padding: 8px 6px;
 
-  background: #202124;
   color: #8f9299;
 
+  background: #202124;
   border: 0;
 
-  font: inherit;
   font-size: 12px;
 
   cursor: pointer;
@@ -990,96 +998,9 @@
   color: #ffffff;
 }
 
-.room-manager-features,
-.room-hardware-panel {
-  flex: 1;
-  min-height: 0;
-
-  padding: 14px;
-
-  overflow-y: auto;
-}
-
 .room-feature-row {
   display: grid;
-  grid-template-columns: 130px 1fr;
-
-  align-items: center;
-  gap: 10px;
-
-  padding: 7px 8px;
-
-  font-size: 12px;
-}
-
-.room-feature-row input,
-.room-feature-row select,
-.room-device-mapping select,
-.room-device-feature input {
-  min-width: 0;
-
-  padding: 6px 8px;
-
-  box-sizing: border-box;
-
-  color: #ffffff;
-  background: #18191c;
-
-  border: 1px solid #45474e;
-  border-radius: 4px;
-}
-
-.room-feature-section {
-  margin-top: 14px;
-  padding: 8px;
-
-  color: #aeb0b6;
-
-  font-size: 12px;
-  font-weight: 600;
-
-  border-bottom: 1px solid #45474e;
-}
-
-.room-device-feature,
-.room-device-mapping {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-
-  align-items: center;
-  gap: 8px;
-
-  padding: 8px;
-}
-
-.room-device-mapping {
-  grid-template-columns: 160px minmax(0, 1fr);
-}
-
-.room-device-feature button {
-  padding: 5px 10px;
-
-  color: #eeeeee;
-  background: #34363c;
-
-  border: 1px solid #45474e;
-  border-radius: 4px;
-
-  cursor: pointer;
-}
-
-.room-manager-features {
-  height: 100%;
-
-  display: flex;
-  flex-direction: column;
-
-  overflow-y: auto;
-}
-
-.room-feature-row {
-  display: grid;
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: 64px minmax(0, 1fr);
   align-items: center;
   gap: 6px;
 
@@ -1088,37 +1009,170 @@
   font-size: 12px;
 }
 
+.room-feature-row label {
+  color: #aeb0b6;
+}
+
 .room-feature-row input,
 .room-feature-row select {
   box-sizing: border-box;
+
   width: 100%;
   min-width: 0;
 
   padding: 5px 6px;
 
-  background: #18191c;
-  color: white;
+  color: #ffffff;
 
+  background: #18191c;
   border: 1px solid #45474e;
   border-radius: 4px;
 }
 
 .room-feature-row > button {
+  box-sizing: border-box;
+
   width: 100%;
   min-width: 0;
 
   padding: 5px 8px;
+
+  color: #d8d8d8;
+
+  background: #34363c;
+  border: 1px solid #45474e;
+  border-radius: 4px;
+
+  cursor: pointer;
+}
+
+.room-feature-row > button:hover {
+  background: #414349;
+  color: #ffffff;
+}
+
+.room-feature-section {
+  margin-top: 8px;
+  padding: 7px 8px;
+
+  color: #8f9299;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  text-transform: uppercase;
+
+  border-top: 1px solid #3a3c41;
+}
+
+.room-device-feature,
+.room-device-mapping {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 5px 8px;
+}
+
+.room-device-feature input {
+  box-sizing: border-box;
+
+  flex: 1;
+  min-width: 0;
+
+  padding: 5px 6px;
+
+  color: #ffffff;
+
+  background: #18191c;
+  border: 1px solid #45474e;
+  border-radius: 4px;
+}
+
+.room-device-feature button {
+  flex: 0 0 auto;
+
+  padding: 5px 7px;
+
+  color: #d8d8d8;
+
+  background: #34363c;
+  border: 1px solid #45474e;
+  border-radius: 4px;
+}
+
+.room-device-mapping {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.room-device-mapping label {
+  color: #aeb0b6;
+
+  font-size: 12px;
+}
+
+.room-device-mapping select {
+  box-sizing: border-box;
+
+  width: 100%;
+  min-width: 0;
+
+  padding: 5px 6px;
+
+  color: #ffffff;
+
+  background: #18191c;
+  border: 1px solid #45474e;
+  border-radius: 4px;
 }
 
 .room-manager-feature-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
 
   margin-top: auto;
-  padding: 12px 8px 8px;
+  padding: 8px;
 
-  border-top: 1px solid #45474e;
+  border-top: 1px solid #3a3c41;
+}
+
+.room-manager-feature-actions button {
+  padding: 6px 10px;
+
+  color: #d8d8d8;
+
+  background: #34363c;
+  border: 1px solid #45474e;
+  border-radius: 4px;
+
+  cursor: pointer;
+}
+
+.room-manager-feature-actions button:hover:not(:disabled) {
+  background: #414349;
+  color: #ffffff;
+}
+
+.room-manager-feature-actions button:disabled {
+  opacity: 0.45;
+}
+
+/* RIGHT ROOM EDITOR */
+
+.room-manager-editor {
+  min-width: 0;
+  min-height: 0;
+
+  padding: 14px;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background: #25262a;
 }
 
 .room-manager-room-header {
@@ -1126,9 +1180,7 @@
   align-items: center;
   justify-content: space-between;
 
-  padding: 10px 14px;
-
-  border-bottom: 1px solid #45474e;
+  margin-bottom: 12px;
 }
 
 .room-manager-room-header h3 {
@@ -1148,33 +1200,16 @@
 
   overflow: auto;
 
-  padding: 24px;
-
   background: #202124;
+  border: 1px solid #3a3c41;
 }
 
 .room-layout-canvas {
   position: relative;
+
   flex: 0 0 auto;
 
-  max-width: 100%;
-  max-height: 100%;
-
-  background:
-    linear-gradient(
-      rgba(255, 255, 255, 0.025) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.025) 1px,
-      transparent 1px
-    ),
-    #292b30;
-
-  background-size:
-    20px 20px;
-
+  background: #292b30;
   border: 2px solid #5a5d65;
 
   box-shadow:
@@ -1226,7 +1261,6 @@
   color: #ffffff;
 
   background: #454850;
-
   border: 1px solid #777b86;
   border-radius: 4px;
 
@@ -1236,17 +1270,18 @@
 }
 
 .room-layout-device-name {
-  margin-top: 4px;
-
   max-width: 110px;
 
+  margin-top: 4px;
+
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 
   color: #d8d8d8;
 
   font-size: 11px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .room-manager-placeholder {

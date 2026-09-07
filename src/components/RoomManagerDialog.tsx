@@ -120,13 +120,17 @@ function RoomManagerDialog({
   }
 
   async function handleCreateRoom() {
-    const room =
-      await onCreateRoom()
+  const room =
+    await onCreateRoom()
 
-    setSelectedRoomId(
-      room.id,
-    )
-  }
+  setSelectedRoomId(
+    room.id,
+  )
+
+  handleChooseRoom(
+    room,
+  )
+}
 
   async function handleDeleteSelectedRoom() {
     const room =
