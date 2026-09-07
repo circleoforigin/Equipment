@@ -92,6 +92,26 @@ function EquipmentWorkspace({
     )
   }
 
+  function handleUpdateSelectedControl(
+    changes: Partial<EquipmentControl>,
+    ) {
+    if (!selectedControl) {
+        return
+    }
+
+    onControlsChange(
+        controls.map(
+        (control) =>
+            control.id === selectedControl.id
+            ? {
+              ...control,
+              ...changes,
+            }
+          : control,
+        ),
+    )
+  }
+
   return (
     <div className="equipment-project-workspace">
       <aside className="equipment-inspector">
@@ -100,16 +120,62 @@ function EquipmentWorkspace({
         </div>
 
         {selectedControl ? (
-          <div className="equipment-control-inspector">
-            <strong>
-              {selectedControl.name}
-            </strong>
+  <div className="equipment-control-inspector">
+    <label>
+      Name
+    </label>
 
-            <span>
-              Type: {selectedControl.type}
-            </span>
-          </div>
-        ) : (
+    <input
+      type="text"
+      value={
+        selectedControl.name
+      }
+      onChange={(event) =>
+        handleUpdateSelectedControl({
+          name:
+            event.target.value,
+        })
+      }
+    />
+
+    <label>
+      Target
+    </label>
+
+    <select
+      value={
+        selectedControl.targetFeatureId ??
+        ''
+      }
+      onChange={(event) =>
+        handleUpdateSelectedControl({
+          targetFeatureId:
+            event.target.value ||
+            undefined,
+        })
+      }
+    >
+      <option value="">
+        Select Room Feature...
+      </option>
+
+      {room?.devices.map(
+        (placement) => (
+          <option
+            key={placement.id}
+            value={placement.id}
+          >
+            {placement.name}
+          </option>
+        ),
+      )}
+    </select>
+
+    <span className="equipment-control-type">
+      Type: {selectedControl.type}
+    </span>
+  </div>
+) : (
           <div className="equipment-inspector-empty">
             Select a Control to inspect it.
           </div>
