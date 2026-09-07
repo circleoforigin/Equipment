@@ -23,6 +23,8 @@ import DeleteProjectDialog from './projects/DeleteProjectDialog'
 import RoomManagerDialog from './components/RoomManagerDialog'
 import RoomSelectorDialog from './components/RoomSelectorDialog'
 
+import EquipmentWorkspace from './components/EquipmentWorkspace'
+
 import type {
   EquipmentRoom,
 } from './models/Room'
@@ -89,8 +91,6 @@ const [
   setIsSavingBeforeAction,
 ] = useState(false)
 
-
-
 const [
   isRoomManagerOpen,
   setIsRoomManagerOpen,
@@ -145,6 +145,14 @@ const [
   useEffect(() => {
     announceEquipmentReady()
   }, [])
+
+  useEffect(() => {
+  if (!activeProject) {
+    return
+  }
+
+  void loadRooms()
+}, [activeProject?.id])
 
   /*
    * ------------------------------------------------------
@@ -883,6 +891,15 @@ async function handleDeleteRoom(
     setIsDeviceRegistryOpen(true)
   }
 
+  const activeRoom =
+  activeProject?.activeRoomId
+    ? rooms.find(
+        (room) =>
+          room.id ===
+          activeProject.activeRoomId,
+      ) ?? null
+    : null
+
   /*
    * ------------------------------------------------------
    * UI
@@ -949,7 +966,9 @@ async function handleDeleteRoom(
   </p>
 </div>
   ) : (
-    <div className="equipment-project-workspace" />
+    <EquipmentWorkspace
+      room={activeRoom}
+    />
   )}
 </main>
 

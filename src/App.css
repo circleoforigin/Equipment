@@ -205,6 +205,38 @@
   min-width: 0;
   min-height: 0;
 
+  display: grid;
+  grid-template-columns: 25% 75%;
+
+  background: #202225;
+}
+
+.equipment-inspector {
+  min-width: 0;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  background: #25262a;
+  border-right: 1px solid #3a3c41;
+}
+
+.equipment-main-workspace {
+  min-width: 0;
+  min-height: 0;
+
+  display: grid;
+  grid-template-rows: 2fr 1fr;
+}
+
+.equipment-room-workspace {
+  min-width: 0;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
   background-color: #202225;
 
   background-image:
@@ -214,6 +246,105 @@
     );
 
   background-size: 20px 20px;
+}
+
+.equipment-control-tray {
+  min-width: 0;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  background: #25262a;
+  border-top: 1px solid #3a3c41;
+}
+
+.equipment-panel-header {
+  flex: 0 0 auto;
+
+  padding: 8px 12px;
+
+  color: #b8bac0;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  background: #25262a;
+  border-bottom: 1px solid #3a3c41;
+}
+
+.equipment-inspector-empty,
+.equipment-control-tray-empty {
+  padding: 16px;
+
+  color: #777b80;
+  font-size: 13px;
+}
+
+.equipment-room-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  overflow: hidden;
+}
+
+.equipment-room-canvas {
+  position: relative;
+
+  width: min(70%, 620px);
+  max-height: 85%;
+
+  background: #18191c;
+  border: 1px solid #45474e;
+
+  box-shadow:
+    0 6px 18px
+    rgba(0, 0, 0, 0.25);
+}
+
+.equipment-room-feature {
+  position: absolute;
+
+  transform:
+    translate(-50%, -50%);
+
+  padding: 5px 8px;
+
+  max-width: 140px;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  background: #2b2d31;
+  border: 1px solid #55585f;
+  border-radius: 4px;
+
+  color: #eeeeee;
+
+  font-size: 12px;
+
+  user-select: none;
+}
+
+.equipment-room-placeholder {
+  flex: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #5f6368;
+
+  font-size: 18px;
+  font-weight: 500;
 }
 
 /* =========================
