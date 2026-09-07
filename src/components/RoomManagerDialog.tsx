@@ -18,7 +18,7 @@ interface RoomManagerDialogProps {
 
   onClose: () => void
 
-  onCreateRoom: () => void
+  onCreateRoom: () => Promise<EquipmentRoom>
 
   onDeleteRoom: (
     roomId: string,
@@ -116,6 +116,15 @@ function RoomManagerDialog({
     }
 
     handleChooseRoom(room)
+  }
+
+  async function handleCreateRoom() {
+    const room =
+        await onCreateRoom()
+
+    setSelectedRoomId(
+        room.id,
+    )
   }
 
   async function handleDeleteSelectedRoom() {

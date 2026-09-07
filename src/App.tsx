@@ -20,10 +20,6 @@ import LoadProjectDialog from './projects/LoadProjectDialog'
 import UnsavedChangesDialog from './projects/UnsavedChangesDialog'
 import DeleteProjectDialog from './projects/DeleteProjectDialog'
 
-import NewRoomDialog, {
-  type NewRoomData,
-} from './components/NewRoomDialog'
-
 import RoomManagerDialog from './components/RoomManagerDialog'
 import RoomSelectorDialog from './components/RoomSelectorDialog'
 
@@ -93,10 +89,7 @@ const [
   setIsSavingBeforeAction,
 ] = useState(false)
 
-const [
-  isNewRoomOpen,
-  setIsNewRoomOpen,
-] = useState(false)
+
 
 const [
   isRoomManagerOpen,
@@ -750,23 +743,19 @@ async function handleManageRooms() {
   setIsRoomManagerOpen(true)
 }
 
-async function createRoom(
-  data: NewRoomData,
-) {
+async function createRoom():
+  Promise<EquipmentRoom> {
   const now =
     new Date().toISOString()
 
-  const isSquare =
-    data.shape === 'square'
-
   const room: EquipmentRoom = {
-    id: crypto.randomUUID(),
+    id:
+      crypto.randomUUID(),
 
-    name: data.name,
+    name:
+      'Unnamed Room',
 
-    width:
-      isSquare ? 1 : 1.5,
-
+    width: 1,
     height: 1,
 
     devices: [],
@@ -775,28 +764,21 @@ async function createRoom(
     updatedAt: now,
   }
 
-  try {
-    const updatedRooms =
-  await roomRepository.saveRoom(
-    room,
+  const updatedRooms =
+    await roomRepository.saveRoom(
+      room,
+    )
+
+  setRooms(
+    [...updatedRooms].sort(
+      (left, right) =>
+        left.name.localeCompare(
+          right.name,
+        ),
+    ),
   )
 
-setRooms(
-  [...updatedRooms].sort(
-    (left, right) =>
-      left.name.localeCompare(
-        right.name,
-      ),
-  ),
-)
-
-setIsNewRoomOpen(false)
-  } catch (createError) {
-    console.error(
-      '[Equipment] Unable to create Room.',
-      createError,
-    )
-  }
+  return room
 }
 
 async function handleSaveRoom(
@@ -1001,8 +983,8 @@ async function handleDeleteRoom(
       setIsRoomManagerOpen(false)
     }
 
-    onCreateRoom={() =>
-      setIsNewRoomOpen(true)
+    onCreateRoom={
+      createRoom
     }
 
     onDeleteRoom={
@@ -1015,15 +997,7 @@ async function handleDeleteRoom(
   />
 )}
 
-{isNewRoomOpen && (
-  <NewRoomDialog
-    onCancel={() =>
-      setIsNewRoomOpen(false)
-    }
 
-    onCreate={createRoom}
-  />
-)}
 
       <NewProjectDialog
         isOpen={
