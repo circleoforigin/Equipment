@@ -15,6 +15,10 @@ import {
   discoverSamsungDevices,
 } from './providers/samsung/SamsungDiscovery.js'
 
+import {
+  connectSamsung,
+} from './providers/samsung/SamsungRemote.js'
+
 const HOST = '127.0.0.1'
 
 const PORT = Number.parseInt(
@@ -36,7 +40,7 @@ const server = createServer(
     if (
       request.method === 'GET' &&
       request.url === '/health'
-    ) {
+    ) {      
       sendJson(
         response,
         200,
@@ -246,7 +250,7 @@ const server = createServer(
       request.method === 'GET' &&
       request.url ===
         '/providers/samsung/discover'
-    ) {
+      ) {
       try {
         const devices =
           await discoverSamsungDevices()
@@ -277,7 +281,88 @@ const server = createServer(
       }
 
       return
-    }    
+    }
+        
+    if (
+  request.method === 'POST' &&
+  request.url ===
+    '/providers/samsung/connect'
+) {
+  try {
+    const body =
+      await readJsonBody(
+        request,
+      )
+
+    if (
+      typeof body !== 'object' ||
+      body === null
+    ) {
+      sendJson(
+        response,
+        400,
+        {
+          error:
+            'Connection request is invalid.',
+        },
+      )
+
+      return
+    }
+
+    const candidate =
+      body as Record<
+        string,
+        unknown
+      >
+
+    if (
+      typeof candidate.address !==
+      'string' ||
+      candidate.address.length === 0
+    ) {
+      sendJson(
+        response,
+        400,
+        {
+          error:
+            'Device address is required.',
+        },
+      )
+
+      return
+    }
+
+    const result =
+      await connectSamsung(
+        candidate.address,
+      )
+
+    sendJson(
+      response,
+      200,
+      result,
+    )
+  } catch (error) {
+    console.error(
+      'Samsung connection failed:',
+      error,
+    )
+
+    sendJson(
+      response,
+      500,
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Samsung connection failed.',
+      },
+    )
+  }
+
+  return
+}
 
     sendJson(
       response,

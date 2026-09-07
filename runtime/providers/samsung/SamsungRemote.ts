@@ -23,7 +23,7 @@ interface SamsungConnectMessage {
   }
 }
 
-export interface SamsungMenuTestResult {
+export interface SamsungConnectResult {
   connected: boolean
   authorized: boolean
   tokenReceived: boolean
@@ -31,7 +31,7 @@ export interface SamsungMenuTestResult {
 
 export async function connectSamsung(
   address: string,
-): Promise<SamsungMenuTestResult> {
+): Promise<SamsungConnectResult> {
   const existingToken =
     await getStoredToken(address)
 
