@@ -11,6 +11,14 @@ import type {
   RegisteredDevice,
 } from '../runtime/EquipmentRuntimeClient'
 
+import {
+  discoverDevices,
+} from '../discovery/DiscoveryCoordinator'
+
+import type {
+  DiscoveredDevice,
+} from '../discovery/DiscoveryTypes'
+
 interface RoomManagerDialogProps {
   rooms: EquipmentRoom[]
   devices: RegisteredDevice[]
@@ -93,6 +101,16 @@ function RoomManagerDialog({
   ] = useState<RoomManagerTab>(
     'features',
   )
+
+  const [
+    discoveredDevices,
+    setDiscoveredDevices,
+  ] = useState<DiscoveredDevice[]>([])
+
+  const [
+    isDiscovering,
+    setIsDiscovering,
+  ] = useState(false)
 
   function handleChooseRoom(
     room: EquipmentRoom,
@@ -279,6 +297,26 @@ function RoomManagerDialog({
         ),
     })
   }
+
+  async function handleDiscover() {
+  if (isDiscovering) {
+    return
+  }
+
+  setIsDiscovering(true)
+  setDiscoveredDevices([])
+
+  try {
+    const result =
+      await discoverDevices()
+
+    setDiscoveredDevices(
+      result.devices,
+    )
+  } finally {
+    setIsDiscovering(false)
+  }
+}
 
   function handlePlacementPointerDown(
     event:
@@ -704,9 +742,15 @@ function RoomManagerDialog({
     </div>
 
     <button
-      type="button"
+        type="button"
+        disabled={isDiscovering}
+        onClick={() => {
+            void handleDiscover()
+        }}
     >
-      Discover
+        {isDiscovering
+            ? 'Discovering...'
+            : 'Discover'}
     </button>
 
     <button
@@ -862,10 +906,45 @@ function RoomManagerDialog({
                   </h3>
                 </div>
 
-                <div className="room-manager-placeholder">
-                  Click Discover to search for
-                  compatible hardware.
-                </div>
+                <div className="room-hardware-devices">
+  {discoveredDevices.length === 0 ? (
+    <div className="room-manager-placeholder">
+      {isDiscovering
+        ? 'Searching for compatible hardware...'
+        : 'Click Discover to search for compatible hardware.'}
+    </div>
+  ) : (
+    <>
+      <div className="room-feature-section">
+        Discovered Devices
+      </div>
+
+      {discoveredDevices.map(
+        (device, index) => (
+          <div
+            key={
+              device.providerDeviceId ??
+              device.address ??
+              `${device.providerId}-${index}`
+            }
+            className="room-hardware-device"
+          >
+            <strong>
+              {device.name}
+            </strong>
+
+            {device.model && (
+              <div>
+                {device.model}
+              </div>
+            )}
+
+          </div>
+        ),
+      )}
+    </>
+  )}
+</div>
               </div>
             )
           ) : (
