@@ -112,6 +112,13 @@ function RoomManagerDialog({
     setIsDiscovering,
   ] = useState(false)
 
+  const [
+    selectedDiscoveredDevice,
+    setSelectedDiscoveredDevice,
+  ] = useState<DiscoveredDevice | null>(
+    null,
+  )
+
   function handleChooseRoom(
     room: EquipmentRoom,
   ) {
@@ -305,6 +312,7 @@ function RoomManagerDialog({
 
   setIsDiscovering(true)
   setDiscoveredDevices([])
+  setSelectedDiscoveredDevice(null)
 
   try {
     const result =
@@ -754,10 +762,12 @@ function RoomManagerDialog({
     </button>
 
     <button
-      type="button"
-      disabled
+        type="button"
+        disabled={
+            selectedDiscoveredDevice === null
+        }
     >
-      Connect
+        Connect
     </button>
 
     <button
@@ -921,14 +931,28 @@ function RoomManagerDialog({
 
       {discoveredDevices.map(
         (device, index) => (
-          <div
+          <button
             key={
-              device.providerDeviceId ??
-              device.address ??
-              `${device.providerId}-${index}`
-            }
-            className="room-hardware-device"
-          >
+            device.providerDeviceId ??
+    device.address ??
+    `${device.providerId}-${index}`
+  }
+  type="button"
+  className={[
+    'room-hardware-device',
+
+    selectedDiscoveredDevice === device
+      ? 'selected'
+      : '',
+  ]
+    .filter(Boolean)
+    .join(' ')}
+  onClick={() =>
+    setSelectedDiscoveredDevice(
+      device,
+    )
+  }
+>
             <strong>
               {device.name}
             </strong>
@@ -939,7 +963,7 @@ function RoomManagerDialog({
               </div>
             )}
 
-          </div>
+          </button>
         ),
       )}
     </>
