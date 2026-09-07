@@ -15,12 +15,12 @@ function normalizeProject(
   return {
     ...project,
 
-    controlIds:
-      Array.isArray(
-        project.controlIds,
-      )
-        ? project.controlIds
-        : [],
+    controls:
+        Array.isArray(
+            project.controls,
+        )
+            ? project.controls
+            : [],
 
     reactions:
       Array.isArray(

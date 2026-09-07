@@ -1,8 +1,13 @@
+import type {
+  EquipmentControl,
+} from './Control'
+
 export interface EquipmentProject {
   id: string
   name: string
-  
-  controlIds: string[]
+
+  controls: EquipmentControl[]
+
   reactions: []
 
   activeRoomId?: string

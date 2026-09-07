@@ -505,7 +505,7 @@ async function createProject(
 
       name,
 
-      controlIds: [],
+      controls: [],
 
       reactions: [],
 
