@@ -697,84 +697,40 @@ function RoomManagerDialog({
                 )}
 
                 {activeTab ===
-                  'hardware' && (
-                  <>
-                    <div className="room-feature-section">
-                      Device Mapping
-                    </div>
+  'hardware' && (
+  <>
+    <div className="room-feature-section">
+      Hardware
+    </div>
 
-                    {draftRoom.devices.length ===
-                    0 ? (
-                      <p>
-                        Add a device placement
-                        on the Features tab first.
-                      </p>
-                    ) : (
-                      draftRoom.devices.map(
-                        (
-                          placement,
-                        ) => (
-                          <div
-                            key={
-                              placement.id
-                            }
-                            className="room-device-mapping"
-                          >
-                            <label>
-                              {
-                                placement.name
-                              }
-                            </label>
+    <button
+      type="button"
+    >
+      Discover
+    </button>
 
-                            <select
-                              value={
-                                placement.deviceId
-                              }
-                              onChange={(
-                                event,
-                              ) =>
-                                handleDeviceAssignment(
-                                  placement.id,
+    <button
+      type="button"
+      disabled
+    >
+      Connect
+    </button>
 
-                                  event
-                                    .target
-                                    .value,
-                                )
-                              }
-                            >
-                              <option value="">
-                                Unassigned
-                              </option>
+    <button
+      type="button"
+      disabled
+    >
+      Register to Room
+    </button>
 
-                              {devices.map(
-                                (
-                                  device,
-                                ) => (
-                                  <option
-                                    key={
-                                      device.id
-                                    }
-                                    value={
-                                      device.id
-                                    }
-                                  >
-                                    {
-                                      device.name
-                                    }
-
-                                    {device.model
-                                      ? ` · ${device.model}`
-                                      : ''}
-                                  </option>
-                                ),
-                              )}
-                            </select>
-                          </div>
-                        ),
-                      )
-                    )}
-                  </>
-                )}
+    <button
+      type="button"
+      disabled
+    >
+      Forget
+    </button>
+  </>
+)}
 
                 <div className="room-manager-feature-actions">
                   <button
@@ -803,8 +759,9 @@ function RoomManagerDialog({
           </div>
 
           <div className="room-manager-editor">
-            {draftRoom ? (
-              <>
+  {draftRoom ? (
+    activeTab === 'features' ? (
+      <>
                 <div className="room-manager-room-header">
                   <h3>
                     {draftRoom.name}
@@ -896,12 +853,26 @@ function RoomManagerDialog({
                     )}
                   </div>
                 </div>
-              </>
+                            </>
             ) : (
-              <div className="room-manager-placeholder">
-                Select a Room to manage.
+              <div className="room-hardware-workspace">
+                <div className="room-manager-room-header">
+                  <h3>
+                    Hardware
+                  </h3>
+                </div>
+
+                <div className="room-manager-placeholder">
+                  Click Discover to search for
+                  compatible hardware.
+                </div>
               </div>
-            )}
+            )
+          ) : (
+            <div className="room-manager-placeholder">
+              Select a Room to manage.
+            </div>
+          )}
           </div>
         </div>
       </div>
