@@ -1,7 +1,7 @@
 import { createServer, } from 'node:http';
 import { getRegisteredDevices, registerDevice, removeRegisteredDevice, } from './devices/DeviceRegistry.js';
 import { discoverSamsungDevices, } from './providers/samsung/SamsungDiscovery.js';
-import { testSamsungMenu, } from './providers/samsung/SamsungRemote.js';
+import { connectSamsung, } from './providers/samsung/SamsungRemote.js';
 const HOST = '127.0.0.1';
 const PORT = Number.parseInt(process.env.EQUIPMENT_RUNTIME_PORT ?? '3012', 10);
 const server = createServer(async (request, response) => {
@@ -120,33 +120,34 @@ const server = createServer(async (request, response) => {
     }
     if (request.method === 'POST' &&
         request.url ===
-            '/providers/samsung/test-menu') {
+            '/providers/samsung/connect') {
         try {
             const body = await readJsonBody(request);
             if (typeof body !== 'object' ||
                 body === null) {
                 sendJson(response, 400, {
-                    error: 'Request body must be an object.',
+                    error: 'Connection request is invalid.',
                 });
                 return;
             }
             const candidate = body;
             if (typeof candidate.address !==
-                'string') {
+                'string' ||
+                candidate.address.length === 0) {
                 sendJson(response, 400, {
-                    error: 'Samsung device address is required.',
+                    error: 'Device address is required.',
                 });
                 return;
             }
-            const result = await testSamsungMenu(candidate.address);
+            const result = await connectSamsung(candidate.address);
             sendJson(response, 200, result);
         }
         catch (error) {
-            console.error('Samsung menu test failed:', error);
+            console.error('Samsung connection failed:', error);
             sendJson(response, 500, {
                 error: error instanceof Error
                     ? error.message
-                    : 'Samsung menu test failed.',
+                    : 'Samsung connection failed.',
             });
         }
         return;

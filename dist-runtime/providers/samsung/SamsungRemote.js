@@ -4,9 +4,9 @@ const SAMSUNG_REMOTE_PORT = 8002;
 const CONNECTION_TIMEOUT_MS = 30000;
 const CREDENTIAL_SERVICE = 'SettingForge Equipment Samsung';
 const CLIENT_NAME = Buffer.from('SettingForge Equipment', 'utf8').toString('base64');
-export async function testSamsungMenu(address) {
+export async function connectSamsung(address) {
     const existingToken = await getStoredToken(address);
-    const token = await connectAndSendKey(address, 'KEY_MENU', existingToken);
+    const token = await connectForAuthorization(address, existingToken);
     if (token &&
         token !== existingToken) {
         await storeToken(address, token);
@@ -27,10 +27,9 @@ async function storeToken(address, token) {
 function createCredentialAccount(address) {
     return `samsung:${address}`;
 }
-function connectAndSendKey(address, key, token) {
+function connectForAuthorization(address, token) {
     return new Promise((resolve, reject) => {
-        const url = createRemoteUrl(address, token);
-        const socket = new WebSocket(url, {
+        const socket = new WebSocket(createRemoteUrl(address, token), {
             rejectUnauthorized: false,
             handshakeTimeout: CONNECTION_TIMEOUT_MS,
         });
@@ -48,7 +47,7 @@ function connectAndSendKey(address, key, token) {
                 socket.close();
             }
             catch {
-                // Socket may already be closed.
+                // Already closed.
             }
             resolve(receivedToken ?? token);
         }
@@ -62,27 +61,21 @@ function connectAndSendKey(address, key, token) {
                 socket.close();
             }
             catch {
-                // Socket may already be closed.
+                // Already closed.
             }
             reject(error);
         }
         socket.on('message', (data) => {
             const message = parseConnectMessage(data);
-            if (!message) {
-                return;
-            }
-            if (message.event !==
+            if (message?.event !==
                 'ms.channel.connect') {
                 return;
             }
-            const receivedToken = typeof message.data
-                ?.token === 'string'
+            const receivedToken = typeof message.data?.token ===
+                'string'
                 ? message.data.token
                 : undefined;
-            sendRemoteKey(socket, key);
-            setTimeout(() => {
-                succeed(receivedToken);
-            }, 300);
+            succeed(receivedToken);
         });
         socket.on('error', (error) => {
             fail(error instanceof Error
@@ -108,17 +101,6 @@ function createRemoteUrl(address, token) {
         '/api/v2/channels/' +
         'samsung.remote.control?' +
         parameters.toString());
-}
-function sendRemoteKey(socket, key) {
-    socket.send(JSON.stringify({
-        method: 'ms.remote.control',
-        params: {
-            Cmd: 'Click',
-            DataOfCmd: key,
-            Option: 'false',
-            TypeOfRemote: 'SendRemoteKey',
-        },
-    }));
 }
 function parseConnectMessage(data) {
     try {

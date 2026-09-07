@@ -7,6 +7,10 @@ import type {
   RoomDevicePlacement,
 } from '../models/Room'
 
+import {
+  registerDevice,
+} from '../runtime/EquipmentRuntimeClient'
+
 import type {
   RegisteredDevice,
 } from '../runtime/EquipmentRuntimeClient'
@@ -353,6 +357,81 @@ const [
   }
 }
 
+async function handleRegisterToRoom() {
+  if (
+    !draftRoom ||
+    !selectedDiscoveredDevice
+  ) {
+    return
+  }
+
+  const selectedKey =
+    getDiscoveredDeviceKey(
+      selectedDiscoveredDevice,
+    )
+
+  if (
+    connectedDeviceKey !==
+    selectedKey
+  ) {
+    return
+  }
+
+  try {
+    const registeredDevice =
+      await registerDevice({
+        providerId:
+          selectedDiscoveredDevice.providerId,
+
+        providerDeviceId:
+          selectedDiscoveredDevice.providerDeviceId,
+
+        name:
+          selectedDiscoveredDevice.name,
+
+        manufacturer:
+          selectedDiscoveredDevice.manufacturer,
+
+        model:
+          selectedDiscoveredDevice.model,
+
+        address:
+          selectedDiscoveredDevice.address,
+      })
+
+    if (
+      draftRoom.registeredDeviceIds.includes(
+        registeredDevice.id,
+      )
+    ) {
+      window.alert(
+        `${selectedDiscoveredDevice.name} is already registered to this Room.`,
+      )
+
+      return
+    }
+
+    setDraftRoom({
+      ...draftRoom,
+
+      registeredDeviceIds: [
+        ...draftRoom.registeredDeviceIds,
+        registeredDevice.id,
+      ],
+    })
+
+    window.alert(
+      `${selectedDiscoveredDevice.name} registered to ${draftRoom.name}.`,
+    )
+  } catch (error) {
+    window.alert(
+      error instanceof Error
+        ? error.message
+        : 'Device registration failed.',
+    )
+  }
+}
+
 async function handleConnect() {
   if (
     !selectedDiscoveredDevice ||
@@ -394,6 +473,9 @@ async function handleConnect() {
       getDiscoveredDeviceKey(
         selectedDiscoveredDevice,
       ),
+    )
+    window.alert(
+        `Connected to ${selectedDiscoveredDevice.name}.`,
     )
   } catch (error) {
     window.alert(
@@ -867,6 +949,9 @@ async function handleConnect() {
                 selectedDiscoveredDevice,
             )
         }
+        onClick={() => {
+            void handleRegisterToRoom()
+        }}
     >
         Register to Room
     </button>
