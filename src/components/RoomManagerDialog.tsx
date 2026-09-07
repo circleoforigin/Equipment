@@ -54,6 +54,10 @@ type RoomManagerTab =
   | 'features'
   | 'hardware'
 
+  type HardwareView =
+  | 'registered'
+  | 'discover'
+
 const ROOM_SCALE_PX = 320
 
 function getRoomShape(
@@ -139,6 +143,13 @@ const [
   null,
 )
 
+const [
+  hardwareView,
+  setHardwareView,
+] = useState<HardwareView>(
+  'registered',
+)
+
   function handleChooseRoom(
     room: EquipmentRoom,
   ) {
@@ -148,6 +159,9 @@ const [
 
     setActiveTab(
       'features',
+    )
+    setHardwareView(
+      'registered',
     )
   }
 
@@ -760,11 +774,15 @@ async function handleConnect() {
                         ? 'active'
                         : ''
                     }
-                    onClick={() =>
-                      setActiveTab(
-                        'hardware',
-                      )
-                    }
+                    onClick={() => {
+                        setActiveTab(
+                            'hardware',
+                        )
+
+                        setHardwareView(
+                            'registered',
+                        )
+                    }}
                   >
                     Hardware
                   </button>
@@ -906,54 +924,81 @@ async function handleConnect() {
 
                 {activeTab ===
   'hardware' && (
-  <>
-    <div className="room-feature-section">
-      Hardware
-    </div>
-
+  <div className="room-hardware-actions">
     <button
-        type="button"
-        disabled={isDiscovering}
-        onClick={() => {
-            void handleDiscover()
-        }}
+      type="button"
+      className={
+        hardwareView ===
+        'registered'
+          ? 'active'
+          : ''
+      }
+      onClick={() =>
+        setHardwareView(
+          'registered',
+        )
+      }
     >
-        {isDiscovering
-            ? 'Discovering...'
-            : 'Discover'}
+      Registered Devices
     </button>
 
     <button
-        type="button"
-        disabled={
-            selectedDiscoveredDevice ===
-            null ||
-            isConnecting
-        }
-        onClick={() => {
-            void handleConnect()
-        }}
-        >
-        {isConnecting
-            ? 'Connecting...'
-            : 'Connect'}
+      type="button"
+      className={
+        hardwareView ===
+        'discover'
+          ? 'active'
+          : ''
+      }
+      disabled={isDiscovering}
+      onClick={() => {
+        setHardwareView(
+          'discover',
+        )
+
+        void handleDiscover()
+      }}
+    >
+      {isDiscovering
+        ? 'Discovering...'
+        : 'Discover'}
     </button>
 
     <button
-        type="button"
-        disabled={
-            selectedDiscoveredDevice ===
-            null ||
-            connectedDeviceKey !==
-            getDiscoveredDeviceKey(
-                selectedDiscoveredDevice,
-            )
-        }
-        onClick={() => {
-            void handleRegisterToRoom()
-        }}
+      type="button"
+      disabled={
+        hardwareView !==
+          'discover' ||
+        selectedDiscoveredDevice ===
+          null ||
+        isConnecting
+      }
+      onClick={() => {
+        void handleConnect()
+      }}
     >
-        Register to Room
+      {isConnecting
+        ? 'Connecting...'
+        : 'Connect'}
+    </button>
+
+    <button
+      type="button"
+      disabled={
+        hardwareView !==
+          'discover' ||
+        selectedDiscoveredDevice ===
+          null ||
+        connectedDeviceKey !==
+          getDiscoveredDeviceKey(
+            selectedDiscoveredDevice,
+          )
+      }
+      onClick={() => {
+        void handleRegisterToRoom()
+      }}
+    >
+      Register to Room
     </button>
 
     <button
@@ -962,7 +1007,7 @@ async function handleConnect() {
     >
       Forget
     </button>
-  </>
+  </div>
 )}
 
                 <div className="room-manager-feature-actions">
@@ -1096,11 +1141,49 @@ async function handleConnect() {
                 </div>
 
                 <div className="room-hardware-devices">
-  {discoveredDevices.length === 0 ? (
+  {hardwareView ===
+  'registered' ? (
+    <>
+      <div className="room-feature-section">
+        Registered Devices
+      </div>
+
+      {draftRoom.registeredDeviceIds
+        .length === 0 ? (
+        <div className="room-manager-placeholder">
+          No devices are registered to this Room.
+        </div>
+      ) : (
+        devices
+          .filter((device) =>
+            draftRoom.registeredDeviceIds.includes(
+              device.id,
+            ),
+          )
+          .map((device) => (
+            <div
+              key={device.id}
+              className="room-hardware-device"
+            >
+              <strong>
+                {device.name}
+              </strong>
+
+              {device.model && (
+                <div>
+                  {device.model}
+                </div>
+              )}
+            </div>
+          ))
+      )}
+    </>
+  ) : discoveredDevices.length ===
+    0 ? (
     <div className="room-manager-placeholder">
       {isDiscovering
         ? 'Searching for compatible hardware...'
-        : 'Click Discover to search for compatible hardware.'}
+        : 'No compatible hardware found.'}
     </div>
   ) : (
     <>
@@ -1112,26 +1195,27 @@ async function handleConnect() {
         (device, index) => (
           <button
             key={
-            device.providerDeviceId ??
-    device.address ??
-    `${device.providerId}-${index}`
-  }
-  type="button"
-  className={[
-    'room-hardware-device',
+              device.providerDeviceId ??
+              device.address ??
+              `${device.providerId}-${index}`
+            }
+            type="button"
+            className={[
+              'room-hardware-device',
 
-    selectedDiscoveredDevice === device
-      ? 'selected'
-      : '',
-  ]
-    .filter(Boolean)
-    .join(' ')}
-  onClick={() =>
-    setSelectedDiscoveredDevice(
-      device,
-    )
-  }
->
+              selectedDiscoveredDevice ===
+              device
+                ? 'selected'
+                : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            onClick={() =>
+              setSelectedDiscoveredDevice(
+                device,
+              )
+            }
+          >
             <strong>
               {device.name}
             </strong>
@@ -1141,7 +1225,6 @@ async function handleConnect() {
                 {device.model}
               </div>
             )}
-
           </button>
         ),
       )}

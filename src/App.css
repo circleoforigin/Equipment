@@ -1293,3 +1293,40 @@
 
   color: #8f9299;
 }
+
+.room-hardware-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.room-hardware-actions > button {
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 12px;
+
+  border: 1px solid #454545;
+  border-radius: 4px;
+
+  background: #292929;
+  color: #eeeeee;
+
+  font: inherit;
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.room-hardware-actions > button:hover:not(:disabled) {
+  background: #3a3a3a;
+}
+
+.room-hardware-actions > button.active {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.room-hardware-actions > button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
