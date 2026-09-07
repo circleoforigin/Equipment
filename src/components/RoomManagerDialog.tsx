@@ -167,20 +167,14 @@ function RoomManagerDialog({
   }
 
   async function handleSave() {
-    if (!draftRoom) {
-      return
-    }
-
-    await onSaveRoom(
-      draftRoom,
-    )
-
-    setDraftRoom(null)
-
-    setActiveTab(
-      'features',
-    )
+  if (!draftRoom) {
+    return
   }
+
+  await onSaveRoom(
+    draftRoom,
+  )
+}
 
   function handleShapeChange(
     shape: RoomShape,
