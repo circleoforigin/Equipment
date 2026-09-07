@@ -19,6 +19,12 @@ export interface SamsungRuntimeDevice {
   address?: string
 }
 
+export interface SamsungConnectResult {
+  connected: boolean
+  authorized: boolean
+  tokenReceived: boolean
+}
+
 export interface RegisterDeviceInput {
   providerId: string
   providerDeviceId?: string
@@ -110,6 +116,67 @@ export async function discoverSamsungDevices():
   }
 
   return devices
+}
+
+export async function connectSamsungDevice(
+  address: string,
+): Promise<SamsungConnectResult> {
+  const response = await fetch(
+    `${runtimeUrl}/providers/samsung/connect`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        address,
+      }),
+    },
+  )
+
+  if (!response.ok) {
+    const message =
+      await readRuntimeError(
+        response,
+      )
+
+    throw new Error(
+      message ??
+      `Samsung connection returned HTTP ${response.status}.`,
+    )
+  }
+
+  const body =
+    await response.json() as unknown
+
+  if (
+    typeof body !== 'object' ||
+    body === null
+  ) {
+    throw new Error(
+      'Samsung connection returned an invalid response.',
+    )
+  }
+
+  const candidate =
+    body as Record<string, unknown>
+
+  if (
+    typeof candidate.connected !==
+      'boolean' ||
+    typeof candidate.authorized !==
+      'boolean' ||
+    typeof candidate.tokenReceived !==
+      'boolean'
+  ) {
+    throw new Error(
+      'Samsung connection returned an invalid result.',
+    )
+  }
+
+  return {
+    connected: candidate.connected,
+    authorized: candidate.authorized,
+    tokenReceived:
+      candidate.tokenReceived,
+  }
 }
 
 export async function registerDevice(
