@@ -347,6 +347,91 @@
   font-weight: 500;
 }
 
+.equipment-controls-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.equipment-control-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.equipment-control-toolbar select {
+  min-width: 180px;
+
+  padding: 6px 8px;
+
+  background: #18191c;
+  color: #eeeeee;
+
+  border: 1px solid #45474e;
+  border-radius: 4px;
+}
+
+.equipment-control-toolbar button {
+  padding: 6px 12px;
+
+  background: #292929;
+  color: #eeeeee;
+
+  border: 1px solid #454545;
+  border-radius: 4px;
+
+  cursor: pointer;
+}
+
+.equipment-control-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  padding: 12px;
+
+  overflow-y: auto;
+}
+
+.equipment-control-item {
+  min-width: 120px;
+  padding: 10px 14px;
+
+  text-align: left;
+
+  background: #202225;
+  color: #dddddd;
+
+  border: 1px solid #45474e;
+  border-radius: 4px;
+
+  cursor: pointer;
+}
+
+.equipment-control-item:hover {
+  background: #2b2d31;
+}
+
+.equipment-control-item.selected {
+  border-color: #888c94;
+  background: #34363b;
+}
+
+.equipment-control-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  padding: 16px;
+
+  color: #cccccc;
+}
+
+.equipment-control-inspector strong {
+  color: #ffffff;
+}
+
 /* =========================
    GENERIC DIALOGS
    Matches Regions

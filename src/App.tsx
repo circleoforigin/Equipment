@@ -891,6 +891,21 @@ async function handleDeleteRoom(
     setIsDeviceRegistryOpen(true)
   }
 
+  function handleControlsChange(
+  controls: EquipmentProject['controls'],
+) {
+  if (!activeProject) {
+    return
+  }
+
+  setActiveProject({
+    ...activeProject,
+    controls,
+  })
+
+  setProjectDirty(true)
+}
+
   const activeRoom =
   activeProject?.activeRoomId
     ? rooms.find(
@@ -968,6 +983,14 @@ async function handleDeleteRoom(
   ) : (
     <EquipmentWorkspace
       room={activeRoom}
+
+      controls={
+        activeProject.controls
+      }
+
+      onControlsChange={
+        handleControlsChange
+      }
     />
   )}
 </main>
