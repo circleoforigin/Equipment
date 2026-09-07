@@ -19,6 +19,10 @@ import type {
   DiscoveredDevice,
 } from '../discovery/DiscoveryTypes'
 
+import {
+  getProvider,
+} from '../providers/ProviderRegistry'
+
 interface RoomManagerDialogProps {
   rooms: EquipmentRoom[]
   devices: RegisteredDevice[]
@@ -118,6 +122,18 @@ function RoomManagerDialog({
   ] = useState<DiscoveredDevice | null>(
     null,
   )
+
+  const [
+  isConnecting,
+  setIsConnecting,
+] = useState(false)
+
+const [
+  connectedDeviceKey,
+  setConnectedDeviceKey,
+] = useState<string | null>(
+  null,
+)
 
   function handleChooseRoom(
     room: EquipmentRoom,
@@ -305,6 +321,16 @@ function RoomManagerDialog({
     })
   }
 
+  function getDiscoveredDeviceKey(
+    device: DiscoveredDevice,
+    ): string {
+    return (
+        device.providerDeviceId ??
+        device.address ??
+        device.name
+    )
+  }
+
   async function handleDiscover() {
   if (isDiscovering) {
     return
@@ -313,6 +339,7 @@ function RoomManagerDialog({
   setIsDiscovering(true)
   setDiscoveredDevices([])
   setSelectedDiscoveredDevice(null)
+  setConnectedDeviceKey(null)
 
   try {
     const result =
@@ -323,6 +350,59 @@ function RoomManagerDialog({
     )
   } finally {
     setIsDiscovering(false)
+  }
+}
+
+async function handleConnect() {
+  if (
+    !selectedDiscoveredDevice ||
+    isConnecting
+  ) {
+    return
+  }
+
+  const provider =
+    getProvider(
+      selectedDiscoveredDevice.providerId,
+    )
+
+  if (!provider) {
+    window.alert(
+      'The provider for this device is not available.',
+    )
+    return
+  }
+
+  setIsConnecting(true)
+
+  try {
+    const result =
+      await provider.connect(
+        selectedDiscoveredDevice,
+      )
+
+    if (
+      !result.connected ||
+      !result.authorized
+    ) {
+      throw new Error(
+        'The device did not complete connection and authorization.',
+      )
+    }
+
+    setConnectedDeviceKey(
+      getDiscoveredDeviceKey(
+        selectedDiscoveredDevice,
+      ),
+    )
+  } catch (error) {
+    window.alert(
+      error instanceof Error
+        ? error.message
+        : 'Device connection failed.',
+    )
+  } finally {
+    setIsConnecting(false)
   }
 }
 
@@ -764,17 +844,31 @@ function RoomManagerDialog({
     <button
         type="button"
         disabled={
-            selectedDiscoveredDevice === null
+            selectedDiscoveredDevice ===
+            null ||
+            isConnecting
         }
-    >
-        Connect
+        onClick={() => {
+            void handleConnect()
+        }}
+        >
+        {isConnecting
+            ? 'Connecting...'
+            : 'Connect'}
     </button>
 
     <button
-      type="button"
-      disabled
+        type="button"
+        disabled={
+            selectedDiscoveredDevice ===
+            null ||
+            connectedDeviceKey !==
+            getDiscoveredDeviceKey(
+                selectedDiscoveredDevice,
+            )
+        }
     >
-      Register to Room
+        Register to Room
     </button>
 
     <button

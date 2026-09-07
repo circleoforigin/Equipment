@@ -22,3 +22,12 @@ export function registerProvider(
 export function getProviders(): readonly EquipmentProvider[] {
   return providers
 }
+
+export function getProvider(
+  id: string,
+): EquipmentProvider | undefined {
+  return providers.find(
+    (provider) =>
+      provider.id === id,
+  )
+}
