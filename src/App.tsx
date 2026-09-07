@@ -758,6 +758,8 @@ async function createRoom():
     width: 1,
     height: 1,
 
+    registeredDeviceIds: [],
+
     devices: [],
 
     createdAt: now,

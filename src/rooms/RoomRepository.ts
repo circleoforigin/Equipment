@@ -24,6 +24,13 @@ function normalizeRoom(
         ? room.height
         : 1,
 
+    registeredDeviceIds:
+      Array.isArray(
+        room.registeredDeviceIds,
+      )
+      ? room.registeredDeviceIds
+      : [],
+
     devices:
       Array.isArray(room.devices)
         ? room.devices

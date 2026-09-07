@@ -35,6 +35,15 @@ export interface EquipmentRoom {
   width: number
   height: number
 
+  /**
+   * Physical devices registered to this Room.
+   *
+   * These are Device Registry IDs only.
+   * Semantic names and spatial placement are
+   * handled separately by RoomDevicePlacement.
+   */
+  registeredDeviceIds: string[]
+
   devices: RoomDevicePlacement[]
 
   createdAt: string
