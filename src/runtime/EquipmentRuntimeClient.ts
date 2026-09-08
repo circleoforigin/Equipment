@@ -47,6 +47,14 @@ export interface VizioConnectResult {
     VizioPairingChallenge
 }
 
+export interface CastRuntimeDevice {
+  providerDeviceId?: string
+  name: string
+  model?: string
+  address: string
+  port: number
+}
+
 export interface RegisterDeviceInput {
   providerId: string
   providerDeviceId?: string
@@ -89,6 +97,50 @@ export async function getRuntimeHealth():
   }
 
   return body
+}
+
+export async function discoverCastDevices():
+  Promise<CastRuntimeDevice[]> {
+  const response =
+    await fetch(
+      `${runtimeUrl}/providers/cast/discover`,
+    )
+
+  if (!response.ok) {
+    const message =
+      await readRuntimeError(
+        response,
+      )
+
+    throw new Error(
+      message ??
+      `Cast discovery returned HTTP ${response.status}.`,
+    )
+  }
+
+  const body =
+    await response.json() as unknown
+
+  if (
+    typeof body !== 'object' ||
+    body === null
+  ) {
+    throw new Error(
+      'Cast discovery returned an invalid response.',
+    )
+  }
+
+  const candidate =
+    body as Record<string, unknown>
+
+  if (!Array.isArray(candidate.devices)) {
+    throw new Error(
+      'Cast discovery response did not contain a device list.',
+    )
+  }
+
+  return candidate.devices as
+    CastRuntimeDevice[]
 }
 
 export async function discoverSamsungDevices():

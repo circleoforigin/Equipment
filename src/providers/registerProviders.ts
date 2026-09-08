@@ -10,6 +10,10 @@ import {
   VizioProvider,
 } from './vizio/VizioProvider'
 
+import {
+  GoogleCastProvider,
+} from './cast/GoogleCastProvider'
+
 let registered = false
 
 export function registerEquipmentProviders(): void {
@@ -25,5 +29,9 @@ export function registerEquipmentProviders(): void {
 
   registerProvider(
     new VizioProvider(),
+  )
+
+  registerProvider(
+    new GoogleCastProvider(),
   )
 }

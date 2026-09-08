@@ -46,6 +46,10 @@ import {
   type VizioPairingChallenge,
 } from './providers/vizio/VizioRemote.js'
 
+import {
+  discoverCastDevices,
+} from './providers/cast/CastDiscovery.js'
+
 const HOST = '127.0.0.1'
 
 const PORT = Number.parseInt(
@@ -320,6 +324,48 @@ const server = createServer(
           error instanceof Error
             ? error.message
             : 'Failed to remove Equipment device.',
+      },
+    )
+  }
+
+  return
+}
+
+if (
+  request.method === 'GET' &&
+  request.url ===
+    '/providers/cast/discover'
+) {
+  try {
+    const devices =
+      await discoverCastDevices()
+
+    console.log(
+      'Cast discovery completed:',
+      devices,
+    )
+
+    sendJson(
+      response,
+      200,
+      {
+        devices,
+      },
+    )
+  } catch (error) {
+    console.error(
+      'Cast discovery failed:',
+      error,
+    )
+
+    sendJson(
+      response,
+      500,
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Cast discovery failed.',
       },
     )
   }

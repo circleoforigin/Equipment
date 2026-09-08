@@ -8,6 +8,7 @@ import { connectSamsung, } from './providers/samsung/SamsungRemote.js';
 import { displaySamsungImage, } from './providers/samsung/SamsungDisplay.js';
 import { discoverVizioDevices, } from './providers/vizio/VizioDiscovery.js';
 import { completeVizioPairing, connectVizio, } from './providers/vizio/VizioRemote.js';
+import { discoverCastDevices, } from './providers/cast/CastDiscovery.js';
 const HOST = '127.0.0.1';
 const PORT = Number.parseInt(process.env.EQUIPMENT_RUNTIME_PORT ?? '3012', 10);
 const server = createServer(async (request, response) => {
@@ -124,6 +125,26 @@ const server = createServer(async (request, response) => {
                 error: error instanceof Error
                     ? error.message
                     : 'Failed to remove Equipment device.',
+            });
+        }
+        return;
+    }
+    if (request.method === 'GET' &&
+        request.url ===
+            '/providers/cast/discover') {
+        try {
+            const devices = await discoverCastDevices();
+            console.log('Cast discovery completed:', devices);
+            sendJson(response, 200, {
+                devices,
+            });
+        }
+        catch (error) {
+            console.error('Cast discovery failed:', error);
+            sendJson(response, 500, {
+                error: error instanceof Error
+                    ? error.message
+                    : 'Cast discovery failed.',
             });
         }
         return;
