@@ -518,16 +518,48 @@ async function handleConnect() {
     window.alert(
       'The provider for this device is not available.',
     )
+
     return
   }
 
   setIsConnecting(true)
 
   try {
-    const result =
+    let result =
       await provider.connect(
         selectedDiscoveredDevice,
       )
+
+    if (result.challenge) {
+      if (
+        !provider.completeConnection
+      ) {
+        throw new Error(
+          'The device requires authorization, but the provider cannot complete it.',
+        )
+      }
+
+      if (
+        result.challenge.type ===
+        'pin'
+      ) {
+        const pin =
+          window.prompt(
+            result.challenge.prompt,
+          )
+
+        if (pin === null) {
+          return
+        }
+
+        result =
+          await provider.completeConnection(
+            selectedDiscoveredDevice,
+            result.challenge,
+            pin.trim(),
+          )
+      }
+    }
 
     if (
       !result.connected ||
@@ -543,8 +575,9 @@ async function handleConnect() {
         selectedDiscoveredDevice,
       ),
     )
+
     window.alert(
-        `Connected to ${selectedDiscoveredDevice.name}.`,
+      `Connected to ${selectedDiscoveredDevice.name}.`,
     )
   } catch (error) {
     window.alert(

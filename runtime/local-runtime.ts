@@ -17,8 +17,12 @@ import {
 } from './media/MediaServer.js'
 
 import {
-  fileURLToPath,
-} from 'node:url'
+  prepareDisplayImage,
+} from './media/ImageProcessor.js'
+
+import {
+  resolve,
+} from 'node:path'
 
 import {
   discoverSamsungDevices,
@@ -31,6 +35,16 @@ import {
 import {
   displaySamsungImage,
 } from './providers/samsung/SamsungDisplay.js'
+
+import {
+  discoverVizioDevices,
+} from './providers/vizio/VizioDiscovery.js'
+
+import {
+  completeVizioPairing,
+  connectVizio,
+  type VizioPairingChallenge,
+} from './providers/vizio/VizioRemote.js'
 
 const HOST = '127.0.0.1'
 
@@ -74,16 +88,23 @@ const server = createServer(
 ) {
   try {
     const testImagePath =
-      fileURLToPath(
-        new URL(
-          './media/assets/display-image-test.png',
-          import.meta.url,
-        ),
-      )
+  resolve(
+    process.cwd(),
+    'runtime',
+    'media',
+    'assets',
+    'display-image-test.png',
+  )
+
+    const preparedImagePath =
+      await prepareDisplayImage({
+        sourcePath:
+          testImagePath,
+      })
 
     const imageUrl =
       registerMediaFile(
-        testImagePath,
+        preparedImagePath,
       )
 
     sendJson(
@@ -299,6 +320,185 @@ const server = createServer(
           error instanceof Error
             ? error.message
             : 'Failed to remove Equipment device.',
+      },
+    )
+  }
+
+  return
+}
+
+if (
+  request.method === 'GET' &&
+  request.url ===
+    '/providers/vizio/discover'
+) {
+  try {
+    const devices =
+      await discoverVizioDevices()
+
+    sendJson(
+      response,
+      200,
+      {
+        devices,
+      },
+    )
+  } catch (error) {
+    console.error(
+      'VIZIO discovery failed:',
+      error,
+    )
+
+    sendJson(
+      response,
+      500,
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'VIZIO discovery failed.',
+      },
+    )
+  }
+
+  return
+}
+
+if (
+  request.method === 'POST' &&
+  request.url ===
+    '/providers/vizio/connect'
+) {
+  try {
+    const body =
+      await readJsonBody(
+        request,
+      )
+
+    if (
+      typeof body !== 'object' ||
+      body === null
+    ) {
+      throw new Error(
+        'VIZIO connection request is invalid.',
+      )
+    }
+
+    const candidate =
+      body as Record<
+        string,
+        unknown
+      >
+
+    if (
+      typeof candidate.address !==
+        'string' ||
+      candidate.address.length ===
+        0
+    ) {
+      throw new Error(
+        'VIZIO device address is required.',
+      )
+    }
+
+    const result =
+      await connectVizio(
+        candidate.address,
+      )
+
+    sendJson(
+      response,
+      200,
+      result,
+    )
+  } catch (error) {
+    console.error(
+      'VIZIO connection failed:',
+      error,
+    )
+
+    sendJson(
+      response,
+      500,
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'VIZIO connection failed.',
+      },
+    )
+  }
+
+  return
+}
+
+if (
+  request.method === 'POST' &&
+  request.url ===
+    '/providers/vizio/pair'
+) {
+  try {
+    const body =
+      await readJsonBody(
+        request,
+      )
+
+    if (
+      typeof body !== 'object' ||
+      body === null
+    ) {
+      throw new Error(
+        'VIZIO pairing request is invalid.',
+      )
+    }
+
+    const candidate =
+      body as Record<
+        string,
+        unknown
+      >
+
+    if (
+      typeof candidate.address !==
+        'string' ||
+      typeof candidate.pin !==
+        'string' ||
+      typeof candidate.challenge !==
+        'object' ||
+      candidate.challenge === null
+    ) {
+      throw new Error(
+        'VIZIO pairing request is incomplete.',
+      )
+    }
+
+    const result =
+      await completeVizioPairing(
+        candidate.address,
+        candidate.pin,
+        candidate.challenge as
+          VizioPairingChallenge,
+      )
+
+    sendJson(
+      response,
+      200,
+      result,
+    )
+  } catch (error) {
+    console.error(
+      'VIZIO pairing failed:',
+      error,
+    )
+
+    sendJson(
+      response,
+      500,
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'VIZIO pairing failed.',
       },
     )
   }

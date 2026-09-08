@@ -995,6 +995,11 @@ async function handleDeleteRoom(
       imageUrl,
     )
 
+    if (!provider.displayImage) {
+  throw new Error(
+    'The selected provider does not implement Display Image.',
+  )
+}
     await provider.displayImage(
       {
         providerId:

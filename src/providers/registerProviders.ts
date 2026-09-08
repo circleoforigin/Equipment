@@ -6,6 +6,10 @@ import {
   SamsungProvider,
 } from './samsung/SamsungProvider'
 
+import {
+  VizioProvider,
+} from './vizio/VizioProvider'
+
 let registered = false
 
 export function registerEquipmentProviders(): void {
@@ -17,5 +21,9 @@ export function registerEquipmentProviders(): void {
 
   registerProvider(
     new SamsungProvider(),
+  )
+
+  registerProvider(
+    new VizioProvider(),
   )
 }

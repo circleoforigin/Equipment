@@ -25,6 +25,28 @@ export interface SamsungConnectResult {
   tokenReceived: boolean
 }
 
+export interface VizioRuntimeDevice {
+  providerDeviceId?: string
+  name: string
+  manufacturer?: string
+  model?: string
+  address?: string
+}
+
+export interface VizioPairingChallenge {
+  deviceId: string
+  pairingRequestToken: number
+  challengeType: number
+}
+
+export interface VizioConnectResult {
+  connected: boolean
+  authorized: boolean
+  requiresPin: boolean
+  challenge?:
+    VizioPairingChallenge
+}
+
 export interface RegisterDeviceInput {
   providerId: string
   providerDeviceId?: string
@@ -120,7 +142,7 @@ export async function discoverSamsungDevices():
 
 export async function connectSamsungDevice(
   address: string,
-): Promise<SamsungConnectResult> {
+  ): Promise<SamsungConnectResult> {
   const response = await fetch(
     `${runtimeUrl}/providers/samsung/connect`,
     {
@@ -177,6 +199,127 @@ export async function connectSamsungDevice(
     tokenReceived:
       candidate.tokenReceived,
   }
+}
+
+export async function discoverVizioDevices():
+  Promise<VizioRuntimeDevice[]> {
+  const response =
+    await fetch(
+      `${runtimeUrl}/providers/vizio/discover`,
+    )
+
+  if (!response.ok) {
+    const message =
+      await readRuntimeError(
+        response,
+      )
+
+    throw new Error(
+      message ??
+      `VIZIO discovery returned HTTP ${response.status}.`,
+    )
+  }
+
+  const body =
+    await response.json() as unknown
+
+  if (
+    typeof body !== 'object' ||
+    body === null
+  ) {
+    throw new Error(
+      'VIZIO discovery returned an invalid response.',
+    )
+  }
+
+  const candidate =
+    body as Record<
+      string,
+      unknown
+    >
+
+  if (
+    !Array.isArray(
+      candidate.devices,
+    )
+  ) {
+    throw new Error(
+      'VIZIO discovery response did not contain a device list.',
+    )
+  }
+
+  return candidate.devices as
+    VizioRuntimeDevice[]
+}
+
+export async function connectVizioDevice(
+  address: string,
+): Promise<VizioConnectResult> {
+  const response =
+    await fetch(
+      `${runtimeUrl}/providers/vizio/connect`,
+      {
+        method:
+          'POST',
+
+        body:
+          JSON.stringify({
+            address,
+          }),
+      },
+    )
+
+  if (!response.ok) {
+    const message =
+      await readRuntimeError(
+        response,
+      )
+
+    throw new Error(
+      message ??
+      `VIZIO connection returned HTTP ${response.status}.`,
+    )
+  }
+
+  return response.json() as
+    Promise<VizioConnectResult>
+}
+
+export async function completeVizioPairing(
+  address: string,
+  pin: string,
+  challenge: unknown,
+): Promise<VizioConnectResult> {
+  const response =
+    await fetch(
+      `${runtimeUrl}/providers/vizio/pair`,
+      {
+        method:
+          'POST',
+
+        body:
+          JSON.stringify({
+            address,
+            pin,
+            challenge,
+          }),
+      },
+    )
+
+  if (!response.ok) {
+    const message =
+      await readRuntimeError(
+        response,
+      )
+
+    throw new Error(
+      message ??
+      `VIZIO pairing returned HTTP ${response.status}.`,
+    )
+  }
+
+  return response.json() as
+    Promise<VizioConnectResult>
 }
 
 export async function displaySamsungImage(

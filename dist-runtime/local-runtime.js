@@ -1,7 +1,8 @@
 import { createServer, } from 'node:http';
 import { getRegisteredDevices, registerDevice, removeRegisteredDevice, } from './devices/DeviceRegistry.js';
 import { registerMediaFile, startMediaServer, } from './media/MediaServer.js';
-import { fileURLToPath, } from 'node:url';
+import { prepareDisplayImage, } from './media/ImageProcessor.js';
+import { resolve, } from 'node:path';
 import { discoverSamsungDevices, } from './providers/samsung/SamsungDiscovery.js';
 import { connectSamsung, } from './providers/samsung/SamsungRemote.js';
 import { displaySamsungImage, } from './providers/samsung/SamsungDisplay.js';
@@ -21,8 +22,11 @@ const server = createServer(async (request, response) => {
         request.url ===
             '/media/test/display-image') {
         try {
-            const testImagePath = fileURLToPath(new URL('./media/assets/display-image-test.png', import.meta.url));
-            const imageUrl = registerMediaFile(testImagePath);
+            const testImagePath = resolve(process.cwd(), 'runtime', 'media', 'assets', 'display-image-test.png');
+            const preparedImagePath = await prepareDisplayImage({
+                sourcePath: testImagePath,
+            });
+            const imageUrl = registerMediaFile(preparedImagePath);
             sendJson(response, 200, {
                 imageUrl,
             });
