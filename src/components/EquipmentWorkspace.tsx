@@ -45,6 +45,13 @@ function EquipmentWorkspace({
     null,
   )
 
+  const [controlContextMenu, setControlContextMenu] =
+useState<{
+    controlId: string
+    x: number
+    y: number
+  } | null>(null)
+
   const controlDefinitions =
     getControlDefinitions()
 
@@ -92,6 +99,20 @@ function EquipmentWorkspace({
     )
   }
 
+  function handleDeleteControl(controlId: string) {
+  onControlsChange(
+    controls.filter(
+      (control) => control.id !== controlId,
+    ),
+  )
+
+  if (selectedControlId === controlId) {
+    setSelectedControlId(null)
+  }
+
+  setControlContextMenu(null)
+}
+
   function handleUpdateSelectedControl(
     changes: Partial<EquipmentControl>,
     ) {
@@ -100,7 +121,7 @@ function EquipmentWorkspace({
     }
 
     onControlsChange(
-        controls.map(
+    controls.map(
         (control) =>
             control.id === selectedControl.id
             ? {
@@ -113,7 +134,12 @@ function EquipmentWorkspace({
   }
 
   return (
-    <div className="equipment-project-workspace">
+    <div 
+        className="equipment-project-workspace"
+        onPointerDown={() =>
+        setControlContextMenu(null)
+        }
+    >
       <aside className="equipment-inspector">
         <div className="equipment-panel-header">
           Inspector
@@ -302,29 +328,68 @@ function EquipmentWorkspace({
           ) : (
             <div className="equipment-control-list">
               {controls.map(
-                (control) => (
-                  <button
-                    key={control.id}
-                    type="button"
-                    className={
-                      control.id ===
-                      selectedControlId
-                        ? 'equipment-control-item selected'
-                        : 'equipment-control-item'
-                    }
-                    onClick={() =>
-                      setSelectedControlId(
-                        control.id,
-                      )
-                    }
-                  >
-                    {control.name}
-                  </button>
-                ),
-              )}
+  (control) => (
+    <button
+      key={control.id}
+      type="button"
+      className={
+        control.id ===
+        selectedControlId
+          ? 'equipment-control-node selected'
+          : 'equipment-control-node'
+      }
+      onClick={() =>
+        setSelectedControlId(
+          control.id,
+        )
+      }
+      onContextMenu={(event) => {
+  event.preventDefault()
+
+  setSelectedControlId(
+    control.id,
+  )
+
+  setControlContextMenu({
+    controlId: control.id,
+    x: event.clientX,
+    y: event.clientY,
+  })
+}}
+      title={control.name}
+    >
+      <span className="equipment-control-node-circle" />
+
+      <span className="equipment-control-node-label">
+        {control.name}
+      </span>
+    </button>
+  ),
+)}
             </div>
           )}
         </section>
+
+        {controlContextMenu && (
+  <div
+    className="equipment-control-context-menu"
+    style={{
+      left: controlContextMenu.x,
+      top: controlContextMenu.y,
+    }}
+  >
+    <button
+      type="button"
+      onClick={() =>
+        handleDeleteControl(
+          controlContextMenu.controlId,
+        )
+      }
+    >
+      Delete Control
+    </button>
+  </div>
+)}
       </div>
     </div>
   )

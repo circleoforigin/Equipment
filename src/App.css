@@ -387,35 +387,124 @@
 .equipment-control-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  align-content: flex-start;
+  gap: 12px;
 
   padding: 12px;
 
   overflow-y: auto;
 }
 
-.equipment-control-item {
-  min-width: 120px;
-  padding: 10px 14px;
+.equipment-control-node {
+  appearance: none;
 
-  text-align: left;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 
-  background: #202225;
-  color: #dddddd;
+  width: 82px;
+  padding: 4px;
 
-  border: 1px solid #45474e;
-  border-radius: 4px;
+  color: #d8d8d8;
+  background: transparent;
+
+  border: 0;
 
   cursor: pointer;
 }
 
-.equipment-control-item:hover {
-  background: #2b2d31;
+.equipment-control-node-circle {
+  width: 42px;
+  height: 42px;
+
+  box-sizing: border-box;
+
+  background: #34363c;
+
+  border: 2px solid #5a5d64;
+  border-radius: 50%;
+
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease;
 }
 
-.equipment-control-item.selected {
-  border-color: #888c94;
-  background: #34363b;
+.equipment-control-node:hover
+.equipment-control-node-circle {
+  background: #414349;
+  border-color: #777b83;
+}
+
+.equipment-control-node.selected
+.equipment-control-node-circle {
+  background: #414349;
+
+  border-color: #b5b8bf;
+
+  box-shadow:
+    0 0 0 2px
+    rgb(181 184 191 / 18%);
+}
+
+.equipment-control-node-label {
+  width: 100%;
+
+  color: #c7c9ce;
+
+  font-size: 11px;
+  line-height: 1.2;
+
+  text-align: center;
+
+  overflow-wrap: anywhere;
+}
+
+.equipment-control-node.selected
+.equipment-control-node-label {
+  color: #ffffff;
+}
+
+.equipment-control-context-menu {
+  position: fixed;
+  z-index: 100;
+
+  min-width: 140px;
+  padding: 4px;
+
+  background: #2b2d31;
+
+  border: 1px solid #45474e;
+  border-radius: 4px;
+
+  box-shadow:
+    0 8px 20px
+    rgb(0 0 0 / 35%);
+}
+
+.equipment-control-context-menu button {
+  appearance: none;
+
+  width: 100%;
+  padding: 7px 10px;
+
+  color: #d8d8d8;
+  background: transparent;
+
+  border: 0;
+  border-radius: 3px;
+
+  text-align: left;
+  font: inherit;
+  font-size: 13px;
+
+  cursor: pointer;
+}
+
+.equipment-control-context-menu button:hover {
+  color: white;
+  background: #3a3c41;
 }
 
 .equipment-control-inspector {
