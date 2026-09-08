@@ -54,6 +54,7 @@ import {
 } from './host/ModulePresence'
 
 import DeviceRegistryDialog from './devices/DeviceRegistryDialog'
+import { getProvider } from './providers/ProviderRegistry'
 
 function App() {
   const [
@@ -907,13 +908,87 @@ async function handleDeleteRoom(
   }
 
   function handleTestControl(
-    control: EquipmentProject['controls'][number],
-  ) {
-    console.log(
-      '[Equipment] Test Control:',
-      control,
+  control: EquipmentProject['controls'][number],
+) {
+  if (!activeRoom) {
+    window.alert(
+      'No Room is selected.',
     )
+    return
   }
+
+  if (!control.targetFeatureId) {
+    window.alert(
+      'This Control has no target.',
+    )
+    return
+  }
+
+  const feature =
+    activeRoom.devices.find(
+      (candidate) =>
+        candidate.id ===
+        control.targetFeatureId,
+    )
+
+  if (!feature) {
+    window.alert(
+      'The selected Room Feature could not be found.',
+    )
+    return
+  }
+
+  const device =
+    devices.find(
+      (candidate) =>
+        candidate.id ===
+        feature.deviceId,
+    )
+
+  if (!device) {
+    window.alert(
+      'The physical device for this Feature could not be found.',
+    )
+    return
+  }
+
+  const provider =
+    getProvider(
+      device.providerId,
+    )
+
+  if (!provider) {
+    window.alert(
+      `Provider "${device.providerId}" is not available.`,
+    )
+    return
+  }
+
+  const supportsControl =
+    provider.capabilities.some(
+      (capability) =>
+        capability.id ===
+        control.type,
+    )
+
+  if (!supportsControl) {
+    window.alert(
+      `${device.name} does not support ${control.type}.`,
+    )
+    return
+  }
+
+  console.log(
+    '[Equipment] Resolved Control:',
+    {
+      control,
+      feature,
+      device,
+      provider:
+        provider.id,
+    },
+  )
+}
 
   const activeRoom =
   activeProject?.activeRoomId
