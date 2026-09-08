@@ -1,51 +1,134 @@
 import type {
-  DiscoveredDevice,
-} from '../discovery/DiscoveryTypes'
+  EquipmentCapability,
+} from '../../models/Capability'
 
 import type {
-  EquipmentCapability,
-} from '../models/Capability'
+  DiscoveredDevice,
+} from '../../discovery/DiscoveryTypes'
 
-export interface EquipmentConnectionChallenge {
-  type: 'pin'
-  prompt: string
-  data: unknown
-}
+import {
+  completeVizioPairing,
+  connectVizioDevice,
+  discoverVizioDevices,
+} from '../../runtime/EquipmentRuntimeClient'
 
-export interface EquipmentConnectionResult {
-  connected: boolean
-  authorized: boolean
-  challenge?:
-    EquipmentConnectionChallenge
-}
+import type {
+  EquipmentConnectionChallenge,
+  EquipmentConnectionResult,
+  EquipmentProvider,
+} from '../EquipmentProvider'
 
-export interface DisplayImageRequest {
-  imageUrl: string
-}
+export class VizioProvider
+  implements EquipmentProvider
+{
+  readonly id = 'vizio'
+  readonly name = 'VIZIO'
 
-export interface EquipmentProvider {
-  readonly id: string
-  readonly name: string
-
+  /*
+   * Do not advertise media capabilities
+   * until the video-casting path is proven
+   * on the physical TV.
+   */
   readonly capabilities:
-    EquipmentCapability[]
+    EquipmentCapability[] = []
 
-  discover():
-    Promise<DiscoveredDevice[]>
+  async discover():
+    Promise<DiscoveredDevice[]> {
+    const devices =
+      await discoverVizioDevices()
 
-  connect(
+    return devices.map(
+      (device) => ({
+        providerId: this.id,
+
+        providerDeviceId:
+          device.providerDeviceId,
+
+        name:
+          device.name,
+
+        manufacturer:
+          device.manufacturer,
+
+        model:
+          device.model,
+
+        address:
+          device.address,
+      }),
+    )
+  }
+
+  async connect(
     device: DiscoveredDevice,
-  ): Promise<EquipmentConnectionResult>
+  ): Promise<EquipmentConnectionResult> {
+    if (!device.address) {
+      throw new Error(
+        'VIZIO device does not have a connection address.',
+      )
+    }
 
-  completeConnection?(
+    const result =
+      await connectVizioDevice(
+        device.address,
+      )
+
+    if (
+      result.requiresPin &&
+      result.challenge
+    ) {
+      return {
+        connected:
+          result.connected,
+
+        authorized: false,
+
+        challenge: {
+          type: 'pin',
+
+          prompt:
+            'Enter the PIN shown on the VIZIO TV.',
+
+          data:
+            result.challenge,
+        },
+      }
+    }
+
+    return {
+      connected:
+        result.connected,
+
+      authorized:
+        result.authorized,
+    }
+  }
+
+  async completeConnection(
     device: DiscoveredDevice,
     challenge:
       EquipmentConnectionChallenge,
     response: string,
-  ): Promise<EquipmentConnectionResult>
+  ): Promise<EquipmentConnectionResult> {
+    if (!device.address) {
+      throw new Error(
+        'VIZIO device does not have a connection address.',
+      )
+    }
 
-  displayImage?(
-    device: DiscoveredDevice,
-    request: DisplayImageRequest,
-  ): Promise<void>
+    const result =
+      await completeVizioPairing(
+        device.address,
+        response,
+        challenge.data,
+      )
+
+    return {
+      connected:
+        result.connected,
+
+      authorized:
+        result.authorized,
+    }
+  }
 }

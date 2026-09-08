@@ -5,10 +5,13 @@ const SSDP_ADDRESS =
 
 const SSDP_PORT = 1900
 
-const VIZIO_SEARCH_TARGET =
-  'urn:schemas-kinoma-com:device:shell:1'
+const DISCOVERY_TIMEOUT_MS =
+  4000
 
-const DISCOVERY_TIMEOUT_MS = 3000
+const SEARCH_TARGETS = [
+  'urn:schemas-kinoma-com:device:shell:1',
+  'urn:dial-multiscreen-org:device:dial:1',
+]
 
 export interface VizioDiscoveredDevice {
   providerDeviceId?: string
@@ -26,24 +29,15 @@ export async function discoverVizioDevices():
       const socket =
         dgram.createSocket('udp4')
 
-      const devices =
+      const responses =
         new Map<
           string,
-          VizioDiscoveredDevice
+          {
+            address: string
+            usn?: string
+            location?: string
+          }
         >()
-
-      const searchMessage =
-        Buffer.from(
-          [
-            'M-SEARCH * HTTP/1.1',
-            `HOST: ${SSDP_ADDRESS}:${SSDP_PORT}`,
-            'MAN: "ssdp:discover"',
-            'MX: 2',
-            `ST: ${VIZIO_SEARCH_TARGET}`,
-            '',
-            '',
-          ].join('\r\n'),
-        )
 
       socket.on(
         'message',
@@ -66,27 +60,20 @@ export async function discoverVizioDevices():
               'location',
             )
 
-          const apiPort =
-            getPortFromLocation(
-              location,
-            ) ?? 7345
-
           const key =
             usn ??
-            `${remote.address}:${apiPort}`
+            location ??
+            remote.address
 
-          devices.set(
+          responses.set(
             key,
             {
-              providerDeviceId:
-                usn,
-              name:
-                'VIZIO Smart TV',
-              manufacturer:
-                'VIZIO',
               address:
                 remote.address,
-              apiPort,
+
+              usn,
+
+              location,
             },
           )
         },
@@ -102,18 +89,96 @@ export async function discoverVizioDevices():
 
       socket.bind(
         () => {
-          socket.send(
-            searchMessage,
-            SSDP_PORT,
-            SSDP_ADDRESS,
-          )
+          for (
+            const target
+            of SEARCH_TARGETS
+          ) {
+            socket.send(
+              createSearchMessage(
+                target,
+              ),
+              SSDP_PORT,
+              SSDP_ADDRESS,
+            )
+          }
 
           setTimeout(
-            () => {
+            async () => {
               socket.close()
 
+              const devices:
+                VizioDiscoveredDevice[] =
+                  []
+
+              for (
+                const response
+                of responses.values()
+              ) {
+                const metadata =
+                  response.location
+                    ? await readDeviceDescription(
+                        response.location,
+                      )
+                    : null
+
+                if (
+                  metadata &&
+                  metadata.manufacturer &&
+                  metadata.manufacturer
+                    .toUpperCase() !==
+                    'VIZIO'
+                ) {
+                  continue
+                }
+
+                /*
+                 * DIAL responses give us
+                 * reliable manufacturer
+                 * metadata. The older
+                 * VIZIO-specific response
+                 * may not.
+                 */
+                if (
+                  !metadata &&
+                  !response.usn
+                ) {
+                  continue
+                }
+
+                devices.push({
+                  providerDeviceId:
+                    response.usn,
+
+                  name:
+                    metadata
+                      ?.friendlyName ??
+                    'VIZIO Smart TV',
+
+                  manufacturer:
+                    'VIZIO',
+
+                  model:
+                    metadata
+                      ?.modelName,
+
+                  address:
+                    response.address,
+
+                  /*
+                   * Modern SmartCast API
+                   * port. Pairing can later
+                   * fall back to 9000 if
+                   * necessary.
+                   */
+                  apiPort:
+                    7345,
+                })
+              }
+
               resolve(
-                [...devices.values()],
+                deduplicateDevices(
+                  devices,
+                ),
               )
             },
             DISCOVERY_TIMEOUT_MS,
@@ -122,6 +187,82 @@ export async function discoverVizioDevices():
       )
     },
   )
+}
+
+function createSearchMessage(
+  target: string,
+): Buffer {
+  return Buffer.from(
+    [
+      'M-SEARCH * HTTP/1.1',
+      `HOST: ${SSDP_ADDRESS}:${SSDP_PORT}`,
+      'MAN: "ssdp:discover"',
+      'MX: 2',
+      `ST: ${target}`,
+      '',
+      '',
+    ].join('\r\n'),
+  )
+}
+
+async function readDeviceDescription(
+  location: string,
+): Promise<{
+  friendlyName?: string
+  manufacturer?: string
+  modelName?: string
+} | null> {
+  try {
+    const response =
+      await fetch(
+        location,
+      )
+
+    if (!response.ok) {
+      return null
+    }
+
+    const xml =
+      await response.text()
+
+    return {
+      friendlyName:
+        readXmlValue(
+          xml,
+          'friendlyName',
+        ),
+
+      manufacturer:
+        readXmlValue(
+          xml,
+          'manufacturer',
+        ),
+
+      modelName:
+        readXmlValue(
+          xml,
+          'modelName',
+        ),
+    }
+  } catch {
+    return null
+  }
+}
+
+function readXmlValue(
+  xml: string,
+  tag: string,
+): string | undefined {
+  const pattern =
+    new RegExp(
+      `<${tag}[^>]*>([^<]+)</${tag}>`,
+      'i',
+    )
+
+  const match =
+    xml.match(pattern)
+
+  return match?.[1]?.trim()
 }
 
 function getHeader(
@@ -141,7 +282,9 @@ function getHeader(
         .startsWith(prefix)
     ) {
       return line
-        .slice(prefix.length)
+        .slice(
+          prefix.length,
+        )
         .trim()
     }
   }
@@ -149,32 +292,56 @@ function getHeader(
   return undefined
 }
 
-function getPortFromLocation(
-  location:
-    string | undefined,
-): number | undefined {
-  if (!location) {
-    return undefined
-  }
+function deduplicateDevices(
+  devices:
+    VizioDiscoveredDevice[],
+): VizioDiscoveredDevice[] {
+  const unique =
+    new Map<
+      string,
+      VizioDiscoveredDevice
+    >()
 
-  try {
-    const url =
-      new URL(location)
+  for (
+    const device
+    of devices
+  ) {
+    const key =
+      device.providerDeviceId ??
+      device.address
 
-    if (!url.port) {
-      return undefined
-    }
+    const existing =
+      unique.get(key)
 
-    const port =
-      Number.parseInt(
-        url.port,
-        10,
+    if (!existing) {
+      unique.set(
+        key,
+        device,
       )
 
-    return Number.isFinite(port)
-      ? port
-      : undefined
-  } catch {
-    return undefined
+      continue
+    }
+
+    unique.set(
+      key,
+      {
+        ...existing,
+        ...device,
+
+        name:
+          device.name !==
+          'VIZIO Smart TV'
+            ? device.name
+            : existing.name,
+
+        model:
+          device.model ??
+          existing.model,
+      },
+    )
   }
+
+  return [
+    ...unique.values(),
+  ]
 }
