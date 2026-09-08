@@ -26,6 +26,9 @@ const HEARTBEAT_NAMESPACE =
 const RECEIVER_NAMESPACE =
   'urn:x-cast:com.google.cast.receiver'
 
+const MEDIA_NAMESPACE =
+  'urn:x-cast:com.google.cast.media'
+
 const HEARTBEAT_INTERVAL_MS =
   5000
 
@@ -336,6 +339,91 @@ export class CastClient {
         application.transportId,
     }
   }
+
+  async playVideo(
+  videoUrl: string,
+  loop = true,
+): Promise<void> {
+  const receiver =
+    await this.launchDefaultMediaReceiver()
+
+  const requestId =
+    this.nextRequestId()
+
+  const responsePromise =
+    this.waitForPayload(
+      (
+        message,
+        payload,
+      ) =>
+        message.namespace ===
+          MEDIA_NAMESPACE &&
+        (
+          payload.type ===
+            'MEDIA_STATUS' ||
+          payload.type ===
+            'LOAD_FAILED'
+        ) &&
+        (
+          payload.requestId ===
+            requestId ||
+          payload.requestId ===
+            undefined
+        ),
+    )
+
+  this.sendJson(
+    receiver.transportId,
+    MEDIA_NAMESPACE,
+    {
+      type: 'QUEUE_LOAD',
+      requestId,
+
+      startIndex: 0,
+      currentTime: 0,
+
+      repeatMode:
+        loop
+          ? 'REPEAT_ALL'
+          : 'REPEAT_OFF',
+
+      items: [
+        {
+          autoplay: true,
+
+          media: {
+            contentId:
+              videoUrl,
+
+            contentType:
+              'video/mp4',
+
+            streamType:
+              'BUFFERED',
+
+            metadata: {
+              metadataType: 0,
+              title:
+                'SettingForge Display',
+            },
+          },
+        },
+      ],
+    },
+  )
+
+  const response =
+    await responsePromise
+
+  if (
+    response.type ===
+    'LOAD_FAILED'
+  ) {
+    throw new Error(
+      'Cast receiver rejected the video.',
+    )
+  }
+}
 
   async getReceiverStatus():
     Promise<ReceiverStatusPayload> {

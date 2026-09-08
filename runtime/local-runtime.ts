@@ -21,6 +21,14 @@ import {
 } from './media/ImageProcessor.js'
 
 import {
+  renderImageToVideo,
+} from './media/VideoRenderer.js'
+
+import {
+  CastClient,
+} from './providers/cast/CastClient.js'
+
+import {
   resolve,
 } from 'node:path'
 
@@ -56,6 +64,12 @@ const PORT = Number.parseInt(
   process.env.EQUIPMENT_RUNTIME_PORT ?? '3012',
   10,
 )
+
+const activeCastClients =
+  new Map<
+    string,
+    CastClient
+  >()
 
 interface HealthResponse {
   service: 'equipment-runtime'
@@ -132,6 +146,64 @@ const server = createServer(
           error instanceof Error
             ? error.message
             : 'Unable to register test media.',
+      },
+    )
+  }
+
+  return
+}
+
+if (
+  request.method === 'POST' &&
+  request.url ===
+    '/media/test/display-video'
+) {
+  try {
+    const testImagePath =
+      resolve(
+        process.cwd(),
+        'runtime',
+        'media',
+        'assets',
+        'display-image-test.png',
+      )
+
+    const renderedVideo =
+      await renderImageToVideo(
+        testImagePath,
+      )
+
+    const videoUrl =
+      registerMediaFile(
+        renderedVideo.path,
+      )
+
+    console.log(
+      'Display test video:',
+      videoUrl,
+    )
+
+    sendJson(
+      response,
+      200,
+      {
+        videoUrl,
+      },
+    )
+  } catch (error) {
+    console.error(
+      'Unable to create Display Video test media:',
+      error,
+    )
+
+    sendJson(
+      response,
+      500,
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Unable to create test video.',
       },
     )
   }
@@ -366,6 +438,108 @@ if (
           error instanceof Error
             ? error.message
             : 'Cast discovery failed.',
+      },
+    )
+  }
+
+  return
+}
+if (
+  request.method === 'POST' &&
+  request.url ===
+    '/providers/cast/display-video'
+) {
+  try {
+    const body =
+      await readJsonBody(
+        request,
+      )
+
+    if (
+      typeof body !== 'object' ||
+      body === null
+    ) {
+      throw new Error(
+        'Cast Display Video request is invalid.',
+      )
+    }
+
+    const candidate =
+      body as Record<
+        string,
+        unknown
+      >
+
+    if (
+      typeof candidate.address !==
+        'string' ||
+      candidate.address.length ===
+        0
+    ) {
+      throw new Error(
+        'Cast device address is required.',
+      )
+    }
+
+    if (
+      typeof candidate.videoUrl !==
+        'string' ||
+      candidate.videoUrl.length ===
+        0
+    ) {
+      throw new Error(
+        'Video URL is required.',
+      )
+    }
+
+    const existingClient =
+      activeCastClients.get(
+        candidate.address,
+      )
+
+    existingClient?.close()
+
+    const client =
+      new CastClient(
+        candidate.address,
+      )
+
+    try {
+      await client.playVideo(
+        candidate.videoUrl,
+        true,
+      )
+
+      activeCastClients.set(
+        candidate.address,
+        client,
+      )
+    } catch (error) {
+      client.close()
+      throw error
+    }
+
+    sendJson(
+      response,
+      200,
+      {
+        playing: true,
+      },
+    )
+  } catch (error) {
+    console.error(
+      'Cast video display failed:',
+      error,
+    )
+
+    sendJson(
+      response,
+      500,
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Cast video display failed.',
       },
     )
   }

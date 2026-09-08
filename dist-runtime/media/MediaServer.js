@@ -88,6 +88,8 @@ function getContentType(filePath) {
             return 'image/png';
         case '.webp':
             return 'image/webp';
+        case '.mp4':
+            return 'video/mp4';
         default:
             return 'application/octet-stream';
     }

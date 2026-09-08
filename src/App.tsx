@@ -34,7 +34,7 @@ import {
 } from './rooms/RoomRepository'
 
 import {
-  getDisplayImageTestUrl,
+  getDisplayVideoTestUrl,
 } from './runtime/EquipmentRuntimeClient'
 
 import {
@@ -968,12 +968,18 @@ async function handleDeleteRoom(
     return
   }
 
-  const supportsControl =
-    provider.capabilities.some(
-      (capability) =>
-        capability.id ===
-        control.type,
-    )
+  const requiredCapability =
+  control.type ===
+    'display-image'
+    ? 'display-video'
+    : control.type
+
+const supportsControl =
+  provider.capabilities.some(
+    capability =>
+      capability.id ===
+      requiredCapability,
+  )
 
   if (!supportsControl) {
     window.alert(
@@ -983,50 +989,52 @@ async function handleDeleteRoom(
   }
 
   try {
-  if (
-    control.type ===
-    'display-image'
-  ) {
-    const imageUrl =
-      await getDisplayImageTestUrl()
+    if (
+  control.type ===
+  'display-image'
+) {
+  const videoUrl =
+    await getDisplayVideoTestUrl()
 
-    console.log(
-      '[Equipment] Test image URL:',
-      imageUrl,
-    )
-
-    if (!provider.displayImage) {
-  throw new Error(
-    'The selected provider does not implement Display Image.',
+  console.log(
+    '[Equipment] Test video URL:',
+    videoUrl,
   )
-}
-    await provider.displayImage(
-      {
-        providerId:
-          device.providerId,
 
-        providerDeviceId:
-          device.providerDeviceId,
-
-        name:
-          device.name,
-
-        manufacturer:
-          device.manufacturer,
-
-        model:
-          device.model,
-
-        address:
-          device.address,
-      },
-      {
-        imageUrl,
-      },
+  if (!provider.displayVideo) {
+    throw new Error(
+      'The selected provider does not implement Display Video.',
     )
-
-    return
   }
+
+  await provider.displayVideo(
+    {
+      providerId:
+        device.providerId,
+
+      providerDeviceId:
+        device.providerDeviceId,
+
+      name:
+        device.name,
+
+      manufacturer:
+        device.manufacturer,
+
+      model:
+        device.model,
+
+      address:
+        device.address,
+    },
+    {
+      videoUrl,
+      loop: true,
+    },
+  )
+
+  return
+}
 } catch (error) {
   console.error(
     '[Equipment] Control test failed:',

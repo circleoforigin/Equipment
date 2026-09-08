@@ -143,6 +143,90 @@ export async function discoverCastDevices():
     CastRuntimeDevice[]
 }
 
+export async function getDisplayVideoTestUrl():
+  Promise<string> {
+  const response =
+    await fetch(
+      `${runtimeUrl}/media/test/display-video`,
+      {
+        method: 'POST',
+      },
+    )
+
+  if (!response.ok) {
+    const message =
+      await readRuntimeError(
+        response,
+      )
+
+    throw new Error(
+      message ??
+      `Test video creation returned HTTP ${response.status}.`,
+    )
+  }
+
+  const body =
+    await response.json() as
+      unknown
+
+  if (
+    typeof body !== 'object' ||
+    body === null
+  ) {
+    throw new Error(
+      'Test video creation returned an invalid response.',
+    )
+  }
+
+  const candidate =
+    body as Record<
+      string,
+      unknown
+    >
+
+  if (
+    typeof candidate.videoUrl !==
+      'string'
+  ) {
+    throw new Error(
+      'Test video creation did not return a video URL.',
+    )
+  }
+
+  return candidate.videoUrl
+}
+
+export async function displayCastVideo(
+  address: string,
+  videoUrl: string,
+): Promise<void> {
+  const response =
+    await fetch(
+      `${runtimeUrl}/providers/cast/display-video`,
+      {
+        method: 'POST',
+
+        body:
+          JSON.stringify({
+            address,
+            videoUrl,
+          }),
+      },
+    )
+
+  if (!response.ok) {
+    const message =
+      await readRuntimeError(
+        response,
+      )
+
+    throw new Error(
+      message ??
+      `Cast Display Video returned HTTP ${response.status}.`,
+    )
+  }
+}
+
 export async function discoverSamsungDevices():
   Promise<SamsungRuntimeDevice[]> {
   const response = await fetch(

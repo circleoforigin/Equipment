@@ -8,9 +8,11 @@ import type {
 
 import {
   discoverCastDevices,
+  displayCastVideo,
 } from '../../runtime/EquipmentRuntimeClient'
 
 import type {
+  DisplayVideoRequest,
   EquipmentConnectionResult,
   EquipmentProvider,
 } from '../EquipmentProvider'
@@ -18,11 +20,19 @@ import type {
 export class GoogleCastProvider
   implements EquipmentProvider
 {
-  readonly id = 'google-cast'
-  readonly name = 'Google Cast'
+  readonly id =
+    'google-cast'
+
+  readonly name =
+    'Google Cast'
 
   readonly capabilities:
-    EquipmentCapability[] = []
+    EquipmentCapability[] = [
+      {
+        id: 'display-video',
+        name: 'Display Video',
+      },
+    ]
 
   async discover():
     Promise<DiscoveredDevice[]> {
@@ -30,8 +40,9 @@ export class GoogleCastProvider
       await discoverCastDevices()
 
     return devices.map(
-      (device) => ({
-        providerId: this.id,
+      device => ({
+        providerId:
+          this.id,
 
         providerDeviceId:
           device.providerDeviceId,
@@ -51,18 +62,25 @@ export class GoogleCastProvider
   async connect(
     _device: DiscoveredDevice,
   ): Promise<EquipmentConnectionResult> {
-    /*
-     * Cast receivers do not use
-     * the VIZIO PIN authorization
-     * flow.
-     *
-     * Actual Cast transport
-     * connection will be proven
-     * with Display Video.
-     */
     return {
       connected: true,
       authorized: true,
     }
+  }
+
+  async displayVideo(
+    device: DiscoveredDevice,
+    request: DisplayVideoRequest,
+  ): Promise<void> {
+    if (!device.address) {
+      throw new Error(
+        'Google Cast device does not have an address.',
+      )
+    }
+
+    await displayCastVideo(
+      device.address,
+      request.videoUrl,
+    )
   }
 }

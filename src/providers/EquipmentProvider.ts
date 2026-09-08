@@ -23,6 +23,11 @@ export interface DisplayImageRequest {
   imageUrl: string
 }
 
+export interface DisplayVideoRequest {
+  videoUrl: string
+  loop?: boolean
+}
+
 export interface EquipmentProvider {
   readonly id: string
   readonly name: string
@@ -47,5 +52,10 @@ export interface EquipmentProvider {
   displayImage?(
     device: DiscoveredDevice,
     request: DisplayImageRequest,
+  ): Promise<void>
+
+  displayVideo?(
+    device: DiscoveredDevice,
+    request: DisplayVideoRequest,
   ): Promise<void>
 }
