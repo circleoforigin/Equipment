@@ -990,6 +990,11 @@ async function handleDeleteRoom(
     const imageUrl =
       await getDisplayImageTestUrl()
 
+    console.log(
+      '[Equipment] Test image URL:',
+      imageUrl,
+    )
+
     await provider.displayImage(
       {
         providerId:
