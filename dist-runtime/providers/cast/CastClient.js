@@ -126,7 +126,7 @@ export class CastClient {
             transportId: application.transportId,
         };
     }
-    async playVideo(videoUrl, loop = true) {
+    async playVideo(videoUrl, loop = false) {
         const receiver = await this.launchDefaultMediaReceiver();
         const requestId = this.nextRequestId();
         const responsePromise = this.waitForPayload((message, payload) => message.namespace ===
@@ -154,10 +154,6 @@ export class CastClient {
                         contentId: videoUrl,
                         contentType: 'video/mp4',
                         streamType: 'BUFFERED',
-                        metadata: {
-                            metadataType: 0,
-                            title: 'SettingForge Display',
-                        },
                     },
                 },
             ],
@@ -167,6 +163,42 @@ export class CastClient {
             'LOAD_FAILED') {
             throw new Error('Cast receiver rejected the video.');
         }
+        const status = response.status;
+        if (!Array.isArray(status)) {
+            throw new Error('Cast receiver did not return media status.');
+        }
+        const firstStatus = status[0];
+        if (typeof firstStatus !==
+            'object' ||
+            firstStatus === null) {
+            throw new Error('Cast receiver returned invalid media status.');
+        }
+        const mediaSessionId = firstStatus.mediaSessionId;
+        if (typeof mediaSessionId !==
+            'number') {
+            throw new Error('Cast receiver did not return a media session ID.');
+        }
+        return {
+            transportId: receiver.transportId,
+            mediaSessionId,
+        };
+    }
+    async pauseVideo(playback) {
+        const requestId = this.nextRequestId();
+        const responsePromise = this.waitForPayload((message, payload) => message.namespace ===
+            MEDIA_NAMESPACE &&
+            payload.type ===
+                'MEDIA_STATUS' &&
+            (payload.requestId ===
+                requestId ||
+                payload.requestId ===
+                    undefined));
+        this.sendJson(playback.transportId, MEDIA_NAMESPACE, {
+            type: 'PAUSE',
+            requestId,
+            mediaSessionId: playback.mediaSessionId,
+        });
+        await responsePromise;
     }
     async getReceiverStatus() {
         await this.connect();

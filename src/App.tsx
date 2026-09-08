@@ -1163,9 +1163,8 @@ const supportsControl =
 {isRoomManagerOpen && (
   <RoomManagerDialog
     rooms={rooms}
-
     devices={devices}
-
+    onDevicesChanged={reload}
     activeRoomId={
       activeProject?.activeRoomId
     }

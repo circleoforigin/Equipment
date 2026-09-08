@@ -505,10 +505,24 @@ if (
       )
 
     try {
-      await client.playVideo(
-        candidate.videoUrl,
-        true,
-      )
+      const playback =
+  await client.playVideo(
+    candidate.videoUrl,
+    false,
+  )
+
+await new Promise<void>(
+  resolve => {
+    setTimeout(
+      resolve,
+      1000,
+    )
+  },
+)
+
+await client.pauseVideo(
+  playback,
+)
 
       activeCastClients.set(
         candidate.address,

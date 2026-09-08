@@ -81,6 +81,11 @@ export interface CastMediaReceiver {
   transportId: string
 }
 
+export interface CastMediaPlayback {
+  transportId: string
+  mediaSessionId: number
+}
+
 export class CastClient {
   private socket?: tls.TLSSocket
 
@@ -342,8 +347,8 @@ export class CastClient {
 
   async playVideo(
   videoUrl: string,
-  loop = true,
-): Promise<void> {
+  loop = false,
+): Promise<CastMediaPlayback> {
   const receiver =
     await this.launchDefaultMediaReceiver()
 
@@ -400,12 +405,6 @@ export class CastClient {
 
             streamType:
               'BUFFERED',
-
-            metadata: {
-              metadataType: 0,
-              title:
-                'SettingForge Display',
-            },
           },
         },
       ],
@@ -423,6 +422,90 @@ export class CastClient {
       'Cast receiver rejected the video.',
     )
   }
+
+  const status =
+    response.status
+
+  if (!Array.isArray(status)) {
+    throw new Error(
+      'Cast receiver did not return media status.',
+    )
+  }
+
+  const firstStatus =
+    status[0]
+
+  if (
+    typeof firstStatus !==
+      'object' ||
+    firstStatus === null
+  ) {
+    throw new Error(
+      'Cast receiver returned invalid media status.',
+    )
+  }
+
+  const mediaSessionId =
+    (
+      firstStatus as
+        Record<string, unknown>
+    ).mediaSessionId
+
+  if (
+    typeof mediaSessionId !==
+      'number'
+  ) {
+    throw new Error(
+      'Cast receiver did not return a media session ID.',
+    )
+  }
+
+  return {
+    transportId:
+      receiver.transportId,
+
+    mediaSessionId,
+  }
+}
+
+async pauseVideo(
+  playback: CastMediaPlayback,
+): Promise<void> {
+  const requestId =
+    this.nextRequestId()
+
+  const responsePromise =
+    this.waitForPayload(
+      (
+        message,
+        payload,
+      ) =>
+        message.namespace ===
+          MEDIA_NAMESPACE &&
+        payload.type ===
+          'MEDIA_STATUS' &&
+        (
+          payload.requestId ===
+            requestId ||
+          payload.requestId ===
+            undefined
+        ),
+    )
+
+  this.sendJson(
+    playback.transportId,
+    MEDIA_NAMESPACE,
+    {
+      type: 'PAUSE',
+
+      requestId,
+
+      mediaSessionId:
+        playback.mediaSessionId,
+    },
+  )
+
+  await responsePromise
 }
 
   async getReceiverStatus():

@@ -200,7 +200,11 @@ const server = createServer(async (request, response) => {
             existingClient?.close();
             const client = new CastClient(candidate.address);
             try {
-                await client.playVideo(candidate.videoUrl, true);
+                const playback = await client.playVideo(candidate.videoUrl, false);
+                await new Promise(resolve => {
+                    setTimeout(resolve, 1000);
+                });
+                await client.pauseVideo(playback);
                 activeCastClients.set(candidate.address, client);
             }
             catch (error) {

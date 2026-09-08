@@ -44,6 +44,9 @@ interface RoomManagerDialogProps {
   onSaveRoom: (
     room: EquipmentRoom,
   ) => Promise<void>
+
+  onDevicesChanged:
+  () => Promise<void>
 }
 
 type RoomShape =
@@ -92,6 +95,7 @@ function RoomManagerDialog({
   onCreateRoom,
   onDeleteRoom,
   onSaveRoom,
+  onDevicesChanged,
 }: RoomManagerDialogProps) {
   const [
     selectedRoomId,
@@ -467,6 +471,8 @@ async function handleRegisterToRoom() {
         address:
           selectedDiscoveredDevice.address,
       })
+
+      await onDevicesChanged()
 
     if (
       draftRoom.registeredDeviceIds.includes(
