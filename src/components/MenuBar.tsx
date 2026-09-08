@@ -296,13 +296,7 @@ function MenuBar({
 
 <div className="dropdown-separator" />
 
-<button
-  type="button"
-  className="dropdown-item"
-  disabled
->
-  Settings...
-</button>
+
             <button
               type="button"
               className="dropdown-item"

@@ -177,12 +177,7 @@ const activeProjectRef =
     announceEquipmentReady()
   }, [])
 
-  useEffect(() => {
-  if (!activeProject) {
-    return
-  }
-
-  useEffect(() => {
+ useEffect(() => {
   return moduleEventBus
     .onActionsChanged(
       setAvailableActions,
@@ -193,6 +188,11 @@ useEffect(() => {
   activeProjectRef.current =
     activeProject
 }, [activeProject])
+
+useEffect(() => {
+  if (!activeProject) {
+    return
+  }
 
   void loadRooms()
 }, [activeProject?.id])
