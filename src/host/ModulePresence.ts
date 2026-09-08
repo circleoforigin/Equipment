@@ -1,15 +1,18 @@
 import {
   moduleEventBus,
-} from './ModuleBus';
+} from './ModuleBus'
 
 export function announceEquipmentReady(): void {
   moduleEventBus.emit(
     'module.ready',
     {
       capabilities: {
-        events: [],
+        events: [
+          'Equipment.DisplayAvailable',
+        ],
+
         actions: [],
       },
-    }
-  );
+    },
+  )
 }

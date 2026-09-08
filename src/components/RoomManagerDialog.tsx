@@ -258,31 +258,32 @@ const [
 }
 
   function handleShapeChange(
-    shape: RoomShape,
-  ) {
-    if (!draftRoom) {
-      return
-    }
+  shape: RoomShape,
+) {
+  const {
+    width,
+    height,
+  } = getRoomDimensions(
+    shape,
+  )
 
-    const {
-      width,
-      height,
-    } = getRoomDimensions(
-      shape,
-    )
+  setDraftRoom(
+    (current) => {
+      if (!current) {
+        return current
+      }
 
-    setDraftRoom({
-      ...draftRoom,
-      width,
-      height,
-    })
-  }
+      return {
+        ...current,
+        width,
+        height,
+      }
+    },
+  )
+}
 
   function handleAddPlacement() {
-  if (
-    !draftRoom ||
-    !selectedFeatureDeviceId
-  ) {
+  if (!selectedFeatureDeviceId) {
     return
   }
 
@@ -316,14 +317,22 @@ const [
       rotation: 0,
     }
 
-  setDraftRoom({
-    ...draftRoom,
+  setDraftRoom(
+    (current) => {
+      if (!current) {
+        return current
+      }
 
-    devices: [
-      ...draftRoom.devices,
-      placement,
-    ],
-  })
+      return {
+        ...current,
+
+        devices: [
+          ...current.devices,
+          placement,
+        ],
+      }
+    },
+  )
 
   setSelectedFeatureDeviceId(
     '',
@@ -331,23 +340,27 @@ const [
 }
 
   function handleRemovePlacement(
-    placementId: string,
-  ) {
-    if (!draftRoom) {
-      return
-    }
+  placementId: string,
+) {
+  setDraftRoom(
+    (current) => {
+      if (!current) {
+        return current
+      }
 
-    setDraftRoom({
-      ...draftRoom,
+      return {
+        ...current,
 
-      devices:
-        draftRoom.devices.filter(
-          (placement) =>
-            placement.id !==
-            placementId,
-        ),
-    })
-  }
+        devices:
+          current.devices.filter(
+            (placement) =>
+              placement.id !==
+              placementId,
+          ),
+      }
+    },
+  )
+}
 
   function handleDeviceAssignment(
     placementId: string,
@@ -895,22 +908,38 @@ async function handleConnect() {
                         value={
                           draftRoom.name
                         }
-                        onChange={(
-                          event,
-                        ) =>
-                          setDraftRoom({
-                            ...draftRoom,
+                       onChange={(event) => {
+  const name =
+    event.target.value
 
-                            name:
-                              event
-                                .target
-                                .value,
-                          })
-                        }
+  setDraftRoom(
+    (current) => {
+      if (!current) {
+        return current
+      }
+
+      return {
+        ...current,
+
+        devices:
+          current.devices.map(
+            (candidate) =>
+              candidate.id ===
+              placement.id
+                ? {
+                    ...candidate,
+                    name,
+                  }
+                : candidate,
+          ),
+      }
+    },
+  )
+}}
                       />
                     </div>
 
-                    <div className="room-feature-row">
+                    <div className="room-feature-device-row">
                       <label>
                         Shape
                       </label>

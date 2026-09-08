@@ -1771,3 +1771,52 @@
     grid-template-columns: 1fr;
   }
 }
+
+.room-feature-device-row {
+  display: grid;
+  grid-template-columns:
+    64px minmax(0, 1fr) auto;
+
+  align-items: center;
+  gap: 6px;
+
+  padding: 7px 8px;
+
+  font-size: 12px;
+}
+
+.room-feature-device-row label {
+  color: #aeb0b6;
+}
+
+.room-feature-device-row select {
+  box-sizing: border-box;
+
+  width: 100%;
+  min-width: 0;
+
+  padding: 5px 6px;
+
+  color: #d8d8d8;
+  background: #18191c;
+
+  border: 1px solid #45474e;
+  border-radius: 4px;
+}
+
+.room-feature-device-row button {
+  padding: 5px 8px;
+
+  color: #d8d8d8;
+  background: #34363c;
+
+  border: 1px solid #45474e;
+  border-radius: 4px;
+
+  cursor: pointer;
+}
+
+.room-feature-device-row button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

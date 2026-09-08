@@ -19,8 +19,16 @@ import {
 type ProjectProvider =
   () => EquipmentProject | null
 
+export interface EquipmentControlExecutionContext {
+  sourceModuleId: string
+  payload: unknown
+}
+
 type ControlExecutor =
-  (controlId: string) => Promise<void>
+  (
+    controlId: string,
+    context: EquipmentControlExecutionContext,
+  ) => Promise<void>
 
 export class EquipmentActionManager {
   private readonly eventBus:
@@ -36,7 +44,8 @@ export class EquipmentActionManager {
     ProjectProvider = () => null
 
   private executeControl:
-    ControlExecutor = async () => undefined
+    ControlExecutor =
+      async () => undefined
 
   constructor(
     eventBus: ModuleEventBus,
@@ -88,7 +97,8 @@ export class EquipmentActionManager {
   }
 
   private synchronizeSubscriptions(
-    actions: RegisteredActionDefinition[],
+    actions:
+      RegisteredActionDefinition[],
   ): void {
     const availableIds =
       new Set(
@@ -180,12 +190,22 @@ export class EquipmentActionManager {
       }
     }
 
+    const context:
+      EquipmentControlExecutionContext = {
+        sourceModuleId:
+          message.sourceModuleId,
+
+        payload:
+          message.payload,
+      }
+
     for (
       const controlId
       of controlIds
     ) {
       await this.executeControl(
         controlId,
+        context,
       )
     }
   }

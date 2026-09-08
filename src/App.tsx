@@ -32,6 +32,10 @@ import {
 } from './actions/EquipmentActionManager'
 
 import type {
+  EquipmentControlExecutionContext,
+} from './actions/EquipmentActionManager'
+
+import type {
   EquipmentRoom,
 } from './models/Room'
 
@@ -966,7 +970,11 @@ async function handleDeleteRoom(
   }
 
   async function executeControl(
-  control: EquipmentProject['controls'][number],
+  control:
+    EquipmentProject['controls'][number],
+
+  context?:
+    EquipmentControlExecutionContext,
 ) {
   if (!activeRoom) {
     window.alert(
@@ -1112,8 +1120,85 @@ const supportsControl =
       ) ?? null
     : null
 
+    useEffect(() => {
+  function broadcastDisplays() {
+    if (!activeRoom) {
+      return
+    }
+
+    for (
+      const feature
+      of activeRoom.devices
+    ) {
+      const device =
+        devices.find(
+          (candidate) =>
+            candidate.id ===
+            feature.deviceId,
+        )
+
+      if (!device) {
+        continue
+      }
+
+      const provider =
+        getProvider(
+          device.providerId,
+        )
+
+      if (!provider) {
+        continue
+      }
+
+      const isDisplay =
+        provider.capabilities.some(
+          (capability) =>
+            capability.id ===
+              'display-video' ||
+            capability.id ===
+              'display-image',
+        )
+
+      if (!isDisplay) {
+        continue
+      }
+
+      moduleEventBus.emit(
+        'Equipment.DisplayAvailable',
+        {
+          roomId:
+            activeRoom.id,
+
+          roomName:
+            activeRoom.name,
+
+          featureId:
+            feature.id,
+
+          alias:
+            feature.name,
+        },
+      )
+    }
+  }
+
+  broadcastDisplays()
+
+  return moduleEventBus.subscribe(
+    'module.ready',
+    () => {
+      broadcastDisplays()
+    },
+  )
+}, [
+  activeRoom,
+  devices,
+])
+
     async function executeControlById(
   controlId: string,
+  context:
+    EquipmentControlExecutionContext,
 ) {
   const project =
     activeProjectRef.current
@@ -1132,7 +1217,10 @@ const supportsControl =
     return
   }
 
-  await executeControl(control)
+  await executeControl(
+  control,
+  context,
+)
 }
 
 useEffect(() => {
