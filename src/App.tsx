@@ -11,6 +11,7 @@ import type {
   ProjectLoadFailedPayload,
   ProjectLoadedPayload,
   ProjectLoadRequest,
+  RegisteredActionDefinition,
 } from '@settingforge/module-sdk'
 
 import MenuBar from './components/MenuBar'
@@ -24,6 +25,11 @@ import RoomManagerDialog from './components/RoomManagerDialog'
 import RoomSelectorDialog from './components/RoomSelectorDialog'
 
 import EquipmentWorkspace from './components/EquipmentWorkspace'
+import ReactionsDialog from './components/ReactionsDialog'
+
+import {
+  equipmentActionManager,
+} from './actions/EquipmentActionManager'
 
 import type {
   EquipmentRoom,
@@ -141,6 +147,26 @@ const [
     removeDevice,
   } = useDeviceRegistry()
 
+  const [
+  isReactionsOpen,
+  setIsReactionsOpen,
+] = useState(false)
+
+const [
+  availableActions,
+  setAvailableActions,
+] = useState<
+  RegisteredActionDefinition[]
+>(
+  () =>
+    moduleEventBus.getAvailableActions(),
+)
+
+const activeProjectRef =
+  useRef<EquipmentProject | null>(
+    null,
+  )
+
   /*
    * ------------------------------------------------------
    * Module presence
@@ -155,6 +181,18 @@ const [
   if (!activeProject) {
     return
   }
+
+  useEffect(() => {
+  return moduleEventBus
+    .onActionsChanged(
+      setAvailableActions,
+    )
+}, [])
+
+useEffect(() => {
+  activeProjectRef.current =
+    activeProject
+}, [activeProject])
 
   void loadRooms()
 }, [activeProject?.id])
@@ -896,6 +934,22 @@ async function handleDeleteRoom(
     setIsDeviceRegistryOpen(true)
   }
 
+  function handleReactionsChange(
+  reactions:
+    EquipmentProject['reactions'],
+) {
+  if (!activeProject) {
+    return
+  }
+
+  setActiveProject({
+    ...activeProject,
+    reactions,
+  })
+
+  setProjectDirty(true)
+}
+
   function handleControlsChange(
     controls: EquipmentProject['controls'],
   ) {
@@ -911,7 +965,7 @@ async function handleDeleteRoom(
     setProjectDirty(true)
   }
 
-  async function handleTestControl(
+  async function executeControl(
   control: EquipmentProject['controls'][number],
 ) {
   if (!activeRoom) {
@@ -1058,6 +1112,36 @@ const supportsControl =
       ) ?? null
     : null
 
+    async function executeControlById(
+  controlId: string,
+) {
+  const project =
+    activeProjectRef.current
+
+  const control =
+    project?.controls.find(
+      (candidate) =>
+        candidate.id === controlId,
+    )
+
+  if (!control) {
+    console.error(
+      `[Equipment] Control "${controlId}" could not be found.`,
+    )
+
+    return
+  }
+
+  await executeControl(control)
+}
+
+useEffect(() => {
+  return equipmentActionManager.start(
+    () => activeProjectRef.current,
+    executeControlById,
+  )
+})
+
   /*
    * ------------------------------------------------------
    * UI
@@ -1106,6 +1190,11 @@ const supportsControl =
         onShowDeviceRegistry={
           showDeviceRegistry
         }
+
+        onOpenReactions={() => {
+          setIsReactionsOpen(true)
+        }
+}
       />
 
       <main className="equipment-workspace">
@@ -1136,7 +1225,7 @@ const supportsControl =
       }
 
       onTestControl={
-        handleTestControl
+        executeControl
       }
     />
   )}
@@ -1186,6 +1275,36 @@ const supportsControl =
     }
   />
 )}
+
+{isReactionsOpen &&
+  activeProject && (
+    <ReactionsDialog
+      reactions={
+        activeProject.reactions
+      }
+
+      actions={
+        availableActions
+      }
+
+      controls={
+        activeProject.controls.map(
+          (control) => ({
+            id: control.id,
+            name: control.name,
+          }),
+        )
+      }
+
+      onChange={
+        handleReactionsChange
+      }
+
+      onClose={() =>
+        setIsReactionsOpen(false)
+      }
+    />
+  )}
 
 
 

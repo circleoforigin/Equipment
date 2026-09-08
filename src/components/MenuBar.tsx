@@ -24,6 +24,7 @@ interface MenuBarProps {
 
   onDiscoverDevices: () => void
   onShowDeviceRegistry: () => void
+  onOpenReactions: () => void
 }
 
 function MenuBar({
@@ -38,6 +39,7 @@ function MenuBar({
   onManageRooms,
   onDiscoverDevices,
   onShowDeviceRegistry,
+  onOpenReactions,
 }: MenuBarProps) {
   const menuBarRef =
     useRef<HTMLDivElement>(null)
@@ -279,6 +281,28 @@ function MenuBar({
 
         {openMenu === 'settings' && (
           <div className="dropdown-menu">
+            <button
+  type="button"
+  className="dropdown-item"
+  disabled={!projectName}
+  onClick={() =>
+    runMenuAction(
+      onOpenReactions,
+    )
+  }
+>
+  Reactions...
+</button>
+
+<div className="dropdown-separator" />
+
+<button
+  type="button"
+  className="dropdown-item"
+  disabled
+>
+  Settings...
+</button>
             <button
               type="button"
               className="dropdown-item"
