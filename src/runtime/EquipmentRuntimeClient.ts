@@ -207,6 +207,55 @@ export async function displaySamsungImage(
   }
 }
 
+export async function getDisplayImageTestUrl():
+  Promise<string> {
+  const response = await fetch(
+    `${runtimeUrl}/media/test/display-image`,
+    {
+      method: 'POST',
+    },
+  )
+
+  if (!response.ok) {
+    const message =
+      await readRuntimeError(
+        response,
+      )
+
+    throw new Error(
+      message ??
+      `Test media registration returned HTTP ${response.status}.`,
+    )
+  }
+
+  const body =
+    await response.json() as unknown
+
+  if (
+    typeof body !== 'object' ||
+    body === null
+  ) {
+    throw new Error(
+      'Test media registration returned an invalid response.',
+    )
+  }
+
+  const candidate =
+    body as Record<string, unknown>
+
+  if (
+    typeof candidate.imageUrl !==
+      'string' ||
+    candidate.imageUrl.length === 0
+  ) {
+    throw new Error(
+      'Test media registration did not return an image URL.',
+    )
+  }
+
+  return candidate.imageUrl
+}
+
 export async function registerDevice(
   input: RegisterDeviceInput,
 ): Promise<RegisteredDevice> {

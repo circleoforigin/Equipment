@@ -1,6 +1,7 @@
 import { createServer, } from 'node:http';
 import { getRegisteredDevices, registerDevice, removeRegisteredDevice, } from './devices/DeviceRegistry.js';
-import { startMediaServer } from './media/MediaServer.js';
+import { registerMediaFile, startMediaServer, } from './media/MediaServer.js';
+import { fileURLToPath, } from 'node:url';
 import { discoverSamsungDevices, } from './providers/samsung/SamsungDiscovery.js';
 import { connectSamsung, } from './providers/samsung/SamsungRemote.js';
 import { displaySamsungImage, } from './providers/samsung/SamsungDisplay.js';
@@ -14,6 +15,26 @@ const server = createServer(async (request, response) => {
             status: 'ok',
             version: '0.1.0',
         });
+        return;
+    }
+    if (request.method === 'POST' &&
+        request.url ===
+            '/media/test/display-image') {
+        try {
+            const testImagePath = fileURLToPath(new URL('./media/assets/display-image-test.png', import.meta.url));
+            const imageUrl = registerMediaFile(testImagePath);
+            sendJson(response, 200, {
+                imageUrl,
+            });
+        }
+        catch (error) {
+            console.error('Unable to register Display Image test media:', error);
+            sendJson(response, 500, {
+                error: error instanceof Error
+                    ? error.message
+                    : 'Unable to register test media.',
+            });
+        }
         return;
     }
     if (request.method === 'GET' &&

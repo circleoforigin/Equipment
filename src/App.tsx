@@ -34,6 +34,10 @@ import {
 } from './rooms/RoomRepository'
 
 import {
+  getDisplayImageTestUrl,
+} from './runtime/EquipmentRuntimeClient'
+
+import {
   useDeviceRegistry,
 } from './devices/useDeviceRegistry'
 
@@ -907,7 +911,7 @@ async function handleDeleteRoom(
     setProjectDirty(true)
   }
 
-  function handleTestControl(
+  async function handleTestControl(
   control: EquipmentProject['controls'][number],
 ) {
   if (!activeRoom) {
@@ -978,16 +982,53 @@ async function handleDeleteRoom(
     return
   }
 
-  console.log(
-    '[Equipment] Resolved Control:',
-    {
-      control,
-      feature,
-      device,
-      provider:
-        provider.id,
-    },
+  try {
+  if (
+    control.type ===
+    'display-image'
+  ) {
+    const imageUrl =
+      await getDisplayImageTestUrl()
+
+    await provider.displayImage(
+      {
+        providerId:
+          device.providerId,
+
+        providerDeviceId:
+          device.providerDeviceId,
+
+        name:
+          device.name,
+
+        manufacturer:
+          device.manufacturer,
+
+        model:
+          device.model,
+
+        address:
+          device.address,
+      },
+      {
+        imageUrl,
+      },
+    )
+
+    return
+  }
+} catch (error) {
+  console.error(
+    '[Equipment] Control test failed:',
+    error,
   )
+
+  window.alert(
+    error instanceof Error
+      ? error.message
+      : 'Control test failed.',
+  )
+}
 }
 
   const activeRoom =

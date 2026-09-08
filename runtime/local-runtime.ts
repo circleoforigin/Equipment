@@ -11,7 +11,14 @@ import {
   type RegisterDeviceInput,
 } from './devices/DeviceRegistry.js'
 
-import { startMediaServer } from './media/MediaServer.js'
+import {
+  registerMediaFile,
+  startMediaServer,
+} from './media/MediaServer.js'
+
+import {
+  fileURLToPath,
+} from 'node:url'
 
 import {
   discoverSamsungDevices,
@@ -59,6 +66,53 @@ const server = createServer(
 
       return
     }
+
+    if (
+  request.method === 'POST' &&
+  request.url ===
+    '/media/test/display-image'
+) {
+  try {
+    const testImagePath =
+      fileURLToPath(
+        new URL(
+          './media/assets/display-image-test.png',
+          import.meta.url,
+        ),
+      )
+
+    const imageUrl =
+      registerMediaFile(
+        testImagePath,
+      )
+
+    sendJson(
+      response,
+      200,
+      {
+        imageUrl,
+      },
+    )
+  } catch (error) {
+    console.error(
+      'Unable to register Display Image test media:',
+      error,
+    )
+
+    sendJson(
+      response,
+      500,
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Unable to register test media.',
+      },
+    )
+  }
+
+  return
+}
 
     if (
       request.method === 'GET' &&

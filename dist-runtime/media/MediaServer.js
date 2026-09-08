@@ -11,7 +11,8 @@ export async function startMediaServer() {
         return;
     }
     const server = createServer(async (request, response) => {
-        if (request.method !== 'GET' ||
+        if ((request.method !== 'GET' &&
+            request.method !== 'HEAD') ||
             !request.url?.startsWith('/media/')) {
             response.writeHead(404);
             response.end();
@@ -31,6 +32,10 @@ export async function startMediaServer() {
                 'Content-Length': data.length,
                 'Cache-Control': 'no-store',
             });
+            if (request.method === 'HEAD') {
+                response.end();
+                return;
+            }
             response.end(data);
         }
         catch {
