@@ -892,19 +892,28 @@ async function handleDeleteRoom(
   }
 
   function handleControlsChange(
-  controls: EquipmentProject['controls'],
-) {
-  if (!activeProject) {
-    return
+    controls: EquipmentProject['controls'],
+  ) {
+    if (!activeProject) {
+      return
+    }
+
+    setActiveProject({
+      ...activeProject,
+      controls,
+    })
+
+    setProjectDirty(true)
   }
 
-  setActiveProject({
-    ...activeProject,
-    controls,
-  })
-
-  setProjectDirty(true)
-}
+  function handleTestControl(
+    control: EquipmentProject['controls'][number],
+  ) {
+    console.log(
+      '[Equipment] Test Control:',
+      control,
+    )
+  }
 
   const activeRoom =
   activeProject?.activeRoomId
@@ -990,6 +999,10 @@ async function handleDeleteRoom(
 
       onControlsChange={
         handleControlsChange
+      }
+
+      onTestControl={
+        handleTestControl
       }
     />
   )}

@@ -1,7 +1,9 @@
 import { createServer, } from 'node:http';
 import { getRegisteredDevices, registerDevice, removeRegisteredDevice, } from './devices/DeviceRegistry.js';
+import { startMediaServer } from './media/MediaServer.js';
 import { discoverSamsungDevices, } from './providers/samsung/SamsungDiscovery.js';
 import { connectSamsung, } from './providers/samsung/SamsungRemote.js';
+import { displaySamsungImage, } from './providers/samsung/SamsungDisplay.js';
 const HOST = '127.0.0.1';
 const PORT = Number.parseInt(process.env.EQUIPMENT_RUNTIME_PORT ?? '3012', 10);
 const server = createServer(async (request, response) => {
@@ -152,10 +154,55 @@ const server = createServer(async (request, response) => {
         }
         return;
     }
+    if (request.method === 'POST' &&
+        request.url ===
+            '/providers/samsung/display-image') {
+        try {
+            const body = await readJsonBody(request);
+            if (typeof body !== 'object' ||
+                body === null) {
+                sendJson(response, 400, {
+                    error: 'Display image request is invalid.',
+                });
+                return;
+            }
+            const candidate = body;
+            if (typeof candidate.address !==
+                'string' ||
+                candidate.address.length === 0) {
+                sendJson(response, 400, {
+                    error: 'Device address is required.',
+                });
+                return;
+            }
+            if (typeof candidate.imageUrl !==
+                'string' ||
+                candidate.imageUrl.length === 0) {
+                sendJson(response, 400, {
+                    error: 'Image URL is required.',
+                });
+                return;
+            }
+            await displaySamsungImage(candidate.address, candidate.imageUrl);
+            sendJson(response, 200, {
+                displayed: true,
+            });
+        }
+        catch (error) {
+            console.error('Samsung image display failed:', error);
+            sendJson(response, 500, {
+                error: error instanceof Error
+                    ? error.message
+                    : 'Samsung image display failed.',
+            });
+        }
+        return;
+    }
     sendJson(response, 404, {
         error: 'Not found.',
     });
 });
+await startMediaServer();
 server.listen(PORT, HOST, () => {
     console.log(`Equipment runtime listening on http://${HOST}:${PORT}`);
 });

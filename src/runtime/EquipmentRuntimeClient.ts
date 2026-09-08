@@ -179,6 +179,34 @@ export async function connectSamsungDevice(
   }
 }
 
+export async function displaySamsungImage(
+  address: string,
+  imageUrl: string,
+): Promise<void> {
+  const response = await fetch(
+    `${runtimeUrl}/providers/samsung/display-image`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        address,
+        imageUrl,
+      }),
+    },
+  )
+
+  if (!response.ok) {
+    const message =
+      await readRuntimeError(
+        response,
+      )
+
+    throw new Error(
+      message ??
+      `Samsung display image returned HTTP ${response.status}.`,
+    )
+  }
+}
+
 export async function registerDevice(
   input: RegisterDeviceInput,
 ): Promise<RegisteredDevice> {

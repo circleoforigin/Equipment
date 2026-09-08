@@ -24,12 +24,17 @@ interface EquipmentWorkspaceProps {
   onControlsChange:
     (controls: EquipmentControl[]) =>
       void
+
+  onTestControl:
+    (control: EquipmentControl) =>
+      void
 }
 
 function EquipmentWorkspace({
   room,
   controls,
   onControlsChange,
+  onTestControl,
 }: EquipmentWorkspaceProps) {
   const [
     selectedControlType,
@@ -200,6 +205,20 @@ useState<{
     <span className="equipment-control-type">
       Type: {selectedControl.type}
     </span>
+
+    <button
+  type="button"
+  disabled={
+    !selectedControl.targetFeatureId
+  }
+  onClick={() => {
+    onTestControl(
+      selectedControl,
+    )
+  }}
+>
+  Test
+</button>
   </div>
 ) : (
           <div className="equipment-inspector-empty">
