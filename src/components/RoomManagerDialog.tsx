@@ -895,49 +895,38 @@ async function handleConnect() {
                   </button>
                 </div>
 
-                {activeTab ===
-                  'features' && (
-                  <>
-                    <div className="room-feature-row">
-                      <label>
-                        Name
-                      </label>
+              {activeTab ===
+  'features' && (
+  <>
+    <div className="room-feature-row">
+      <label>
+        Name
+      </label>
 
-                      <input
-                        type="text"
-                        value={
-                          draftRoom.name
-                        }
-                       onChange={(event) => {
-  const name =
-    event.target.value
+      <input
+        type="text"
+        value={
+          draftRoom.name
+        }
+        onChange={(event) => {
+          const name =
+            event.target.value
 
-  setDraftRoom(
-    (current) => {
-      if (!current) {
-        return current
-      }
+          setDraftRoom(
+            (current) => {
+              if (!current) {
+                return current
+              }
 
-      return {
-        ...current,
-
-        devices:
-          current.devices.map(
-            (candidate) =>
-              candidate.id ===
-              placement.id
-                ? {
-                    ...candidate,
-                    name,
-                  }
-                : candidate,
-          ),
-      }
-    },
-  )
-}}
-                      />
-                    </div>
+              return {
+                ...current,
+                name,
+              }
+            },
+          )
+        }}
+      />
+    </div>
 
                     <div className="room-feature-device-row">
                       <label>
@@ -1031,60 +1020,57 @@ async function handleConnect() {
                     </div>
 
                     {draftRoom.devices.map(
-                      (
-                        placement,
-                      ) => (
-                        <div
-                          key={
-                            placement.id
+  (placement) => (
+    <div
+      key={placement.id}
+      className="room-device-feature"
+    >
+      <input
+        type="text"
+        value={placement.name}
+        onChange={(event) => {
+          const name =
+            event.target.value
+
+          setDraftRoom(
+            (current) => {
+              if (!current) {
+                return current
+              }
+
+              return {
+                ...current,
+
+                devices:
+                  current.devices.map(
+                    (candidate) =>
+                      candidate.id ===
+                      placement.id
+                        ? {
+                            ...candidate,
+                            name,
                           }
-                          className="room-device-feature"
-                        >
-                          <input
-                            type="text"
-                            value={
-                              placement.name
-                            }
-                            onChange={(
-                              event,
-                            ) =>
-                              setDraftRoom({
-                                ...draftRoom,
+                        : candidate,
+                  ),
+              }
+            },
+          )
+        }}
+      />
 
-                                devices:
-                                  draftRoom.devices.map(
-                                    (
-                                      candidate,
-                                    ) =>
-                                      candidate.id ===
-                                      placement.id
-                                        ? {
-                                            ...candidate,
-
-                                            name:
-                                              event
-                                                .target
-                                                .value,
-                                          }
-                                        : candidate,
-                                  ),
-                              })
-                            }
-                          />
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleRemovePlacement(
-                                placement.id,
-                              )
-                            }
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ),
-                    )}
+      <button
+        type="button"
+        onClick={() =>
+          handleRemovePlacement(
+            placement.id,
+          )
+        }
+      >
+        Remove
+      </button>
+    </div>
+  ),
+)}
                   </>
                 )}
 
