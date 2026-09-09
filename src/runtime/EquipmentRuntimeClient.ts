@@ -196,6 +196,64 @@ export async function getDisplayVideoTestUrl():
   return candidate.videoUrl
 }
 
+export async function createDisplayVideoFromImage(
+  bytes: number[],
+  fileName: string,
+): Promise<string> {
+  const response =
+    await fetch(
+      `${runtimeUrl}/media/display-image`,
+      {
+        method: 'POST',
+
+        body:
+          JSON.stringify({
+            bytes,
+            fileName,
+          }),
+      },
+    )
+
+  if (!response.ok) {
+    const message =
+      await readRuntimeError(
+        response,
+      )
+
+    throw new Error(
+      message ??
+      `Display Image preparation returned HTTP ${response.status}.`,
+    )
+  }
+
+  const body =
+    await response.json() as unknown
+
+  if (
+    typeof body !== 'object' ||
+    body === null
+  ) {
+    throw new Error(
+      'Display Image preparation returned an invalid response.',
+    )
+  }
+
+  const candidate =
+    body as Record<string, unknown>
+
+  if (
+    typeof candidate.videoUrl !==
+      'string' ||
+    candidate.videoUrl.length === 0
+  ) {
+    throw new Error(
+      'Display Image preparation did not return a video URL.',
+    )
+  }
+
+  return candidate.videoUrl
+}
+
 export async function displayCastVideo(
   address: string,
   videoUrl: string,
