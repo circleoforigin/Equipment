@@ -44,6 +44,7 @@ import {
 } from './rooms/RoomRepository'
 
 import {
+  createDisplayVideoFromImage,
   getDisplayVideoTestUrl,
 } from './runtime/EquipmentRuntimeClient'
 
@@ -62,6 +63,10 @@ import {
 import {
   moduleEventBus,
 } from './host/ModuleBus'
+
+import {
+  hostedFileRepository,
+} from './host/HostedFileRepository'
 
 import {
   announceEquipmentReady,
@@ -1055,13 +1060,107 @@ const supportsControl =
   control.type ===
   'display-image'
 ) {
-  const videoUrl =
-    await getDisplayVideoTestUrl()
+  let videoUrl: string
 
-  console.log(
-    '[Equipment] Test video URL:',
-    videoUrl,
+  if (context) {
+    if (
+      typeof context.payload !==
+        'object' ||
+      context.payload === null
+    ) {
+      throw new Error(
+        'Display Image event did not contain a valid payload.',
+      )
+    }
+
+    const payload =
+      context.payload as Record<
+        string,
+        unknown
+      >
+
+    if (
+      typeof payload.filePath !==
+        'string' ||
+      payload.filePath.length === 0 ||
+      typeof payload.fileName !==
+        'string' ||
+      payload.fileName.length === 0
+    ) {
+      throw new Error(
+        'Display Image event did not contain a file reference.',
+      )
+    }
+
+    const normalizedPath =
+      payload.filePath.replace(
+        /\\/g,
+        '/',
+      )
+
+    const separatorIndex =
+      normalizedPath.lastIndexOf(
+        '/',
+      )
+
+   const folder =
+  separatorIndex >= 0
+    ? normalizedPath.slice(
+        0,
+        separatorIndex,
+      )
+    : ''
+
+const storedFileName =
+  separatorIndex >= 0
+    ? normalizedPath.slice(
+        separatorIndex + 1,
+      )
+    : normalizedPath
+
+if (
+  !folder ||
+  !storedFileName
+) {
+  throw new Error(
+    'Display Image file reference is invalid.',
   )
+}
+
+const bytes =
+  await hostedFileRepository
+    .readFromModule(
+      context.sourceModuleId,
+      folder,
+      storedFileName,
+    )
+
+    if (!bytes) {
+      throw new Error(
+        `Unable to read "${payload.fileName}" from ${context.sourceModuleId}.`,
+      )
+    }
+
+    videoUrl =
+      await createDisplayVideoFromImage(
+        bytes,
+        payload.fileName,
+      )
+
+    console.log(
+      '[Equipment] Event image prepared:',
+      payload.filePath,
+      videoUrl,
+    )
+  } else {
+    /*
+     * Manual Control Test:
+     * continue using Equipment's
+     * built-in test image/video.
+     */
+    videoUrl =
+      await getDisplayVideoTestUrl()
+  }
 
   if (!provider.displayVideo) {
     throw new Error(
