@@ -3,8 +3,10 @@ import { getRegisteredDevices, registerDevice, removeRegisteredDevice, } from '.
 import { registerMediaFile, startMediaServer, } from './media/MediaServer.js';
 import { prepareDisplayImage, } from './media/ImageProcessor.js';
 import { renderImageToVideo, } from './media/VideoRenderer.js';
+import { mkdtemp, rm, writeFile, } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { CastClient, } from './providers/cast/CastClient.js';
-import { resolve, } from 'node:path';
+import { extname, join, resolve, } from 'node:path';
 import { discoverSamsungDevices, } from './providers/samsung/SamsungDiscovery.js';
 import { connectSamsung, } from './providers/samsung/SamsungRemote.js';
 import { displaySamsungImage, } from './providers/samsung/SamsungDisplay.js';
@@ -66,6 +68,60 @@ const server = createServer(async (request, response) => {
                     ? error.message
                     : 'Unable to create test video.',
             });
+        }
+        return;
+    }
+    if (request.method === 'POST' &&
+        request.url ===
+            '/media/display-image') {
+        let workingDirectory = null;
+        try {
+            const body = await readJsonBody(request);
+            if (typeof body !== 'object' ||
+                body === null) {
+                throw new Error('Display Image request is invalid.');
+            }
+            const candidate = body;
+            if (!Array.isArray(candidate.bytes) ||
+                typeof candidate.fileName !==
+                    'string' ||
+                candidate.fileName.length === 0) {
+                throw new Error('Display Image requires bytes and fileName.');
+            }
+            const bytes = candidate.bytes;
+            if (!bytes.every(value => typeof value ===
+                'number' &&
+                Number.isInteger(value) &&
+                value >= 0 &&
+                value <= 255)) {
+                throw new Error('Display Image contains invalid file bytes.');
+            }
+            workingDirectory =
+                await mkdtemp(join(tmpdir(), 'settingforge-equipment-image-'));
+            const extension = extname(candidate.fileName) || '.png';
+            const imagePath = join(workingDirectory, `source${extension}`);
+            await writeFile(imagePath, Buffer.from(bytes));
+            const renderedVideo = await renderImageToVideo(imagePath);
+            const videoUrl = registerMediaFile(renderedVideo.path);
+            sendJson(response, 200, {
+                videoUrl,
+            });
+        }
+        catch (error) {
+            console.error('Unable to prepare Display Image media:', error);
+            sendJson(response, 500, {
+                error: error instanceof Error
+                    ? error.message
+                    : 'Unable to prepare Display Image media.',
+            });
+        }
+        finally {
+            if (workingDirectory) {
+                await rm(workingDirectory, {
+                    recursive: true,
+                    force: true,
+                });
+            }
         }
         return;
     }

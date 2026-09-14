@@ -361,32 +361,7 @@ const [
     },
   )
 }
-
-  function handleDeviceAssignment(
-    placementId: string,
-    deviceId: string,
-  ) {
-    if (!draftRoom) {
-      return
-    }
-
-    setDraftRoom({
-      ...draftRoom,
-
-      devices:
-        draftRoom.devices.map(
-          (placement) =>
-            placement.id ===
-            placementId
-              ? {
-                  ...placement,
-                  deviceId,
-                }
-              : placement,
-        ),
-    })
-  }
-
+ 
   function getDiscoveredDeviceKey(
     device: DiscoveredDevice,
     ): string {
