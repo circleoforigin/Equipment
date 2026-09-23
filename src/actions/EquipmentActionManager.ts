@@ -5,7 +5,7 @@ import {
 import type {
   HostEventMessage,
   ModuleEventBus,
-  RegisteredActionDefinition,
+  RegisteredEventDefinition,
 } from '@settingforge/module-sdk'
 
 import type {
@@ -34,7 +34,7 @@ export class EquipmentActionManager {
   private readonly eventBus:
     ModuleEventBus
 
-  private readonly actionSubscriptions =
+  private readonly eventSubscriptions =
     new Map<string, () => void>()
 
   private stopCatalogSubscription:
@@ -66,15 +66,16 @@ export class EquipmentActionManager {
       executeControl
 
     this.stopCatalogSubscription =
-      this.eventBus.onActionsChanged(
-        (actions) =>
+      this.eventBus.onCapabilitiesChanged(
+        (capabilities) =>
           this.synchronizeSubscriptions(
-            actions,
+            capabilities.events,
           ),
       )
 
     this.synchronizeSubscriptions(
-      this.eventBus.getAvailableActions(),
+      this.eventBus.getAvailableCapabilities()
+        .events,
     )
 
     return () => this.stop()
@@ -88,49 +89,49 @@ export class EquipmentActionManager {
 
     for (
       const unsubscribe
-      of this.actionSubscriptions.values()
+      of this.eventSubscriptions.values()
     ) {
       unsubscribe()
     }
 
-    this.actionSubscriptions.clear()
+    this.eventSubscriptions.clear()
   }
 
   private synchronizeSubscriptions(
-    actions:
-      RegisteredActionDefinition[],
+    events:
+      RegisteredEventDefinition[],
   ): void {
     const availableIds =
       new Set(
-        actions.map(
-          (action) => action.id,
+        events.map(
+          (event) => event.id,
         ),
       )
 
     for (
       const [
-        actionId,
+        eventId,
         unsubscribe,
       ]
-      of this.actionSubscriptions
+      of this.eventSubscriptions
     ) {
       if (
-        availableIds.has(actionId)
+        availableIds.has(eventId)
       ) {
         continue
       }
 
       unsubscribe()
 
-      this.actionSubscriptions.delete(
-        actionId,
+      this.eventSubscriptions.delete(
+        eventId,
       )
     }
 
-    for (const action of actions) {
+    for (const event of events) {
       if (
-        this.actionSubscriptions.has(
-          action.id,
+        this.eventSubscriptions.has(
+          event.id,
         )
       ) {
         continue
@@ -138,22 +139,22 @@ export class EquipmentActionManager {
 
       const unsubscribe =
         this.eventBus.subscribe(
-          action.id,
+          event.id,
           (message) => {
-            void this.handleAction(
+            void this.handleEvent(
               message,
             )
           },
         )
 
-      this.actionSubscriptions.set(
-        action.id,
+      this.eventSubscriptions.set(
+        event.id,
         unsubscribe,
       )
     }
   }
 
-  private async handleAction(
+  private async handleEvent(
     message: HostEventMessage,
   ): Promise<void> {
     const project =

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import type {
-  ActionFieldDefinition,
+  EventFieldDefinition,
   ConditionOperator,
   ReactionCondition,
-  RegisteredActionDefinition,
+  RegisteredEventDefinition,
 } from '@settingforge/module-sdk';
 
 import type { EquipmentReaction } from '../models/EquipmentReaction'
@@ -15,7 +15,7 @@ export interface ReactionControlOption {
 
 interface ReactionsDialogProps {
   reactions: EquipmentReaction[]
-  actions: RegisteredActionDefinition[]
+  events: RegisteredEventDefinition[]
   controls: ReactionControlOption[]
   onChange: (reactions: EquipmentReaction[]) => void
   onClose: () => void
@@ -57,13 +57,13 @@ const OPERATOR_LABELS: Record<ConditionOperator, string> = {
   isFalse: 'Is False',
 };
 
-function operatorsFor(field?: ActionFieldDefinition): ConditionOperator[] {
+function operatorsFor(field?: EventFieldDefinition): ConditionOperator[] {
   if (field?.type === 'number') return NUMBER_OPERATORS;
   if (field?.type === 'boolean') return BOOLEAN_OPERATORS;
   return STRING_OPERATORS;
 }
 
-function defaultValue(field?: ActionFieldDefinition) {
+function defaultValue(field?: EventFieldDefinition) {
   if (field?.type === 'number') return 0;
   if (field?.type === 'boolean') return false;
   return '';
@@ -84,15 +84,16 @@ function cloneReaction(reaction: EquipmentReaction): EquipmentReaction {
 
 export default function ReactionsDialog({
   reactions,
-  actions,
+  events,
   controls,
   onChange,
   onClose,
 }: ReactionsDialogProps) {
   const [draft, setDraft] = useState<EquipmentReaction | null>(null);
   const [error, setError] = useState('');
-  const selectedAction = actions.find((action) => {
-    return action.id === draft?.trigger.triggerActionId;
+
+  const selectedEvent = events.find((event) => {
+    return event.id === draft?.trigger.triggerActionId;
   });
 
   function startAdd() {
@@ -101,7 +102,7 @@ export default function ReactionsDialog({
       id: reactionId,
       trigger: {
         id: crypto.randomUUID(),
-        triggerActionId: actions[0]?.id ?? '',
+        triggerActionId: events[0]?.id ?? '',
         conditions: [],
       },
       effect: {
@@ -125,7 +126,7 @@ export default function ReactionsDialog({
 
   function addCondition() {
     if (!draft) return;
-    const field = selectedAction?.fields?.[0];
+    const field = selectedEvent?.fields?.[0];
     if (!field) return;
     const operator = operatorsFor(field)[0];
     setDraft({
@@ -147,7 +148,7 @@ export default function ReactionsDialog({
       return;
     }
     if (!draft.trigger.triggerActionId) {
-      setError('Choose a trigger Action.');
+      setError('Choose a trigger Event.');
       return;
     }
 
@@ -176,22 +177,26 @@ export default function ReactionsDialog({
     const control = controls.find((candidate) => {
       return candidate.id === reaction.effect.controlId;
     });
-    const action = actions.find((candidate) => {
-      return candidate.id === reaction.trigger.triggerActionId;
-    });
-    const effectSummary = `Execute Control: ${control?.name ?? 'Missing Scene'}`;
-    const actionSummary = action
-      ? `${action.moduleName} — ${action.label}`
-      : reaction.trigger.triggerActionId || 'Missing Action';
-    const conditions = reaction.trigger.conditions.map((condition) => {
-      const field = action?.fields?.find((candidate) => {
+    const event = events.find((candidate) => {
+  return candidate.id === reaction.trigger.triggerActionId;
+});
+
+const effectSummary =
+  `Execute Control: ${control?.name ?? 'Missing Control'}`;
+
+const eventSummary = event
+  ? `${event.moduleName} — ${event.label}`
+  : reaction.trigger.triggerActionId || 'Missing Event';
+
+const conditions = reaction.trigger.conditions.map((condition) => {
+  const field = event?.fields?.find((candidate) => {
         return candidate.key === condition.field;
       });
       const operator = OPERATOR_LABELS[condition.operator];
       const value = condition.value === undefined ? '' : ` ${String(condition.value)}`;
       return `${field?.label ?? condition.field} ${operator}${value}`;
     });
-    return { effectSummary, actionSummary, conditions };
+    return { effectSummary, eventSummary, conditions };
   }
 
   return (
@@ -214,7 +219,7 @@ export default function ReactionsDialog({
                   <article key={reaction.id} className="reaction-item">
                     {reaction.name && <strong>{reaction.name}</strong>}
                     <span>{summary.effectSummary}</span>
-                    <span>When {summary.actionSummary}</span>
+                    <span>When {summary.eventSummary}</span>
                     {summary.conditions.map((condition, index) => (
                       <small key={`${reaction.id}:${index}`}>
                         {index > 0 ? 'AND ' : ''}{condition}
@@ -280,48 +285,59 @@ export default function ReactionsDialog({
             </label>
 
             <label>
-              Trigger Action
-              <select
-                value={draft.trigger.triggerActionId}
-                onChange={(event) => setDraft({
-                  ...draft,
-                  trigger: {
-                    ...draft.trigger,
-                    triggerActionId: event.target.value,
-                    conditions: [],
-                  },
-                })}
-              >
-                {!actions.some((action) => {
-                  return action.id === draft.trigger.triggerActionId;
-                }) && draft.trigger.triggerActionId && (
-                  <option value={draft.trigger.triggerActionId}>Missing Action</option>
-                )}
-                {actions.length === 0 && <option value="">No Actions Available</option>}
-                {actions.map((action) => (
-                  <option key={action.id} value={action.id}>
-                    {action.moduleName} — {action.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+  Trigger Event
+  <select
+    value={draft.trigger.triggerActionId}
+    onChange={(event) => setDraft({
+      ...draft,
+      trigger: {
+        ...draft.trigger,
+        triggerActionId: event.target.value,
+        conditions: [],
+      },
+    })}
+  >
+    {!events.some((candidate) => {
+      return candidate.id === draft.trigger.triggerActionId;
+    }) && draft.trigger.triggerActionId && (
+      <option value={draft.trigger.triggerActionId}>
+        Missing Event
+      </option>
+    )}
+
+    {events.length === 0 && (
+      <option value="">
+        No Events Available
+      </option>
+    )}
+
+    {events.map((candidate) => (
+      <option
+        key={`${candidate.moduleId}:${candidate.id}`}
+        value={candidate.id}
+      >
+        {candidate.moduleName} — {candidate.label}
+      </option>
+    ))}
+  </select>
+</label>
 
             <section className="reaction-conditions">
               <div className="reaction-conditions-header">
                 <h3>Conditions</h3>
                 <button
                   type="button"
-                  disabled={!selectedAction?.fields?.length}
+                  disabled={!selectedEvent?.fields?.length}
                   onClick={addCondition}
                 >
                   Add Condition
                 </button>
               </div>
               {draft.trigger.conditions.length === 0 && (
-                <p className="reactions-empty">Runs whenever this Action occurs.</p>
+                <p className="reactions-empty">Runs whenever this Event occurs.</p>
               )}
               {draft.trigger.conditions.map((condition, index) => {
-                const field = selectedAction?.fields?.find((candidate) => {
+                const field = selectedEvent?.fields?.find((candidate) => {
                   return candidate.key === condition.field;
                 });
                 const operators = operatorsFor(field);
@@ -333,7 +349,7 @@ export default function ReactionsDialog({
                       aria-label="Condition field"
                       value={condition.field}
                       onChange={(event) => {
-                        const nextField = selectedAction?.fields?.find((candidate) => {
+                        const nextField = selectedEvent?.fields?.find((candidate) => {
                           return candidate.key === event.target.value;
                         });
                         updateCondition(index, {
@@ -344,7 +360,7 @@ export default function ReactionsDialog({
                       }}
                     >
                       {!field && <option value={condition.field}>Missing Field</option>}
-                      {selectedAction?.fields?.map((candidate) => (
+                      {selectedEvent?.fields?.map((candidate) => (
                         <option key={candidate.key} value={candidate.key}>
                           {candidate.label}
                         </option>

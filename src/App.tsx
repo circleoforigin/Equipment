@@ -6,6 +6,12 @@ import {
   useState,
 } from 'react'
 
+import {
+  equipmentCommandDefinitions,
+  equipmentEventDefinitions,
+  equipmentQueryDefinitions,
+} from './capabilities/EquipmentCapabilities';
+
 import type {
   ProjectCreateRequest,
   ProjectCreateResponse,
@@ -220,6 +226,23 @@ useEffect(() => {
    */
 
   useEffect(() => {
+    if (moduleEventBus.hosted) {
+  void moduleEventBus
+    .registerCapabilities({
+      events:
+        equipmentEventDefinitions,
+      commands:
+        equipmentCommandDefinitions,
+      queries:
+        equipmentQueryDefinitions,
+    })
+    .catch((error: unknown) => {
+      console.error(
+        '[Equipment] Capability registration failed.',
+        error
+      );
+    });
+}
     const unregisterList =
   moduleEventBus.registerRequestHandler(
     'project.list',

@@ -5,14 +5,6 @@ import {
 export function announceEquipmentReady(): void {
   moduleEventBus.emit(
     'module.ready',
-    {
-      capabilities: {
-        events: [
-          'Equipment.DisplayAvailable',
-        ],
-
-        actions: [],
-      },
-    },
+    {},
   )
 }
