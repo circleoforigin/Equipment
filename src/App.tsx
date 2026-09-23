@@ -24,7 +24,7 @@ import type {
   ProjectLoadRequest,
   ProjectRenameRequest,
   ProjectRenameResponse,
-  RegisteredActionDefinition,
+  RegisteredEventDefinition,
 } from '@settingforge/module-sdk'
 
 import MenuBar from './components/MenuBar'
@@ -175,13 +175,15 @@ const [
 ] = useState(false)
 
 const [
-  availableActions,
-  setAvailableActions,
+  availableEvents,
+  setAvailableEvents,
 ] = useState<
-  RegisteredActionDefinition[]
+  RegisteredEventDefinition[]
 >(
   () =>
-    moduleEventBus.getAvailableActions(),
+    moduleEventBus
+      .getAvailableCapabilities()
+      .events,
 )
 
 const activeProjectRef =
@@ -199,10 +201,14 @@ const activeProjectRef =
     announceEquipmentReady()
   }, [])
 
- useEffect(() => {
+useEffect(() => {
   return moduleEventBus
-    .onActionsChanged(
-      setAvailableActions,
+    .onCapabilitiesChanged(
+      (capabilities) => {
+        setAvailableEvents(
+          capabilities.events,
+        )
+      },
     )
 }, [])
 
@@ -1676,10 +1682,7 @@ useEffect(() => {
         activeProject.reactions
       }
 
-      actions={
-        availableActions
-      }
-
+      events={availableEvents}
       controls={
         activeProject.controls.map(
           (control) => ({
