@@ -93,7 +93,7 @@ export default function ReactionsDialog({
   const [error, setError] = useState('');
 
   const selectedEvent = events.find((event) => {
-    return event.id === draft?.trigger.triggerActionId;
+    return event.id === draft?.trigger.triggerEventId;
   });
 
   function startAdd() {
@@ -102,7 +102,7 @@ export default function ReactionsDialog({
       id: reactionId,
       trigger: {
         id: crypto.randomUUID(),
-        triggerActionId: events[0]?.id ?? '',
+        triggerEventId: events[0]?.id ?? '',
         conditions: [],
       },
       effect: {
@@ -147,7 +147,7 @@ export default function ReactionsDialog({
       setError('Choose a Control.');
       return;
     }
-    if (!draft.trigger.triggerActionId) {
+    if (!draft.trigger.triggerEventId) {
       setError('Choose a trigger Event.');
       return;
     }
@@ -178,7 +178,7 @@ export default function ReactionsDialog({
       return candidate.id === reaction.effect.controlId;
     });
     const event = events.find((candidate) => {
-  return candidate.id === reaction.trigger.triggerActionId;
+  return candidate.id === reaction.trigger.triggerEventId;
 });
 
 const effectSummary =
@@ -186,7 +186,7 @@ const effectSummary =
 
 const eventSummary = event
   ? `${event.moduleName} — ${event.label}`
-  : reaction.trigger.triggerActionId || 'Missing Event';
+  : reaction.trigger.triggerEventId || 'Missing Event';
 
 const conditions = reaction.trigger.conditions.map((condition) => {
   const field = event?.fields?.find((candidate) => {
@@ -287,20 +287,20 @@ const conditions = reaction.trigger.conditions.map((condition) => {
             <label>
   Trigger Event
   <select
-    value={draft.trigger.triggerActionId}
+    value={draft.trigger.triggerEventId}
     onChange={(event) => setDraft({
       ...draft,
       trigger: {
         ...draft.trigger,
-        triggerActionId: event.target.value,
+        triggerEventId: event.target.value,
         conditions: [],
       },
     })}
   >
     {!events.some((candidate) => {
-      return candidate.id === draft.trigger.triggerActionId;
-    }) && draft.trigger.triggerActionId && (
-      <option value={draft.trigger.triggerActionId}>
+      return candidate.id === draft.trigger.triggerEventId;
+    }) && draft.trigger.triggerEventId && (
+      <option value={draft.trigger.triggerEventId}>
         Missing Event
       </option>
     )}
