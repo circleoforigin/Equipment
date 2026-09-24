@@ -5,6 +5,7 @@ import {
 } from '@settingforge/module-sdk';
 
 import type {
+  CommandDefinition,
   EventDefinition,
 } from '@settingforge/module-sdk';
 
@@ -39,12 +40,42 @@ const displayAvailableEvent:
     ],
   };
 
+export const executeControlCommandDefinition:
+  CommandDefinition = {
+    id: 'Equipment.ExecuteControl',
+
+    label: 'Execute Control',
+
+    description:
+      'Executes a Control in the active Equipment project.',
+
+    input: [
+      {
+        key: 'controlId',
+        label: 'Control ID',
+        type: 'string',
+        required: true,
+      },
+      {
+        key: 'sourceModuleId',
+        label: 'Source Module ID',
+        type: 'string',
+      },
+      {
+        key: 'eventPayload',
+        label: 'Event Payload',
+        type: 'object',
+      },
+    ],
+  };
+
 export const equipmentEventDefinitions = [
   displayAvailableEvent,
   ...projectEventDefinitions,
 ];
 
 export const equipmentCommandDefinitions = [
+  executeControlCommandDefinition,
   ...projectCommandDefinitions,
 ];
 

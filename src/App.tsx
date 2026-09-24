@@ -46,7 +46,7 @@ import {
 
 import type {
   EquipmentControlExecutionContext,
-} from './actions/EquipmentActionManager'
+} from './models/EquipmentEffect'
 
 import type {
   EquipmentRoom,
@@ -1506,40 +1506,111 @@ const bytes =
   devices,
 ])
 
-    async function executeControlById(
-  controlId: string,
-  context:
-    EquipmentControlExecutionContext,
-) {
+async function executeEquipmentCommand(
+  commandId: string,
+  payload: unknown,
+): Promise<void> {
+  if (
+    commandId !==
+    'Equipment.ExecuteControl'
+  ) {
+    throw new Error(
+      `Unsupported Equipment Command "${commandId}".`,
+    )
+  }
+
+  if (
+    typeof payload !==
+      'object' ||
+    payload === null
+  ) {
+    throw new Error(
+      'Equipment.ExecuteControl requires a payload.',
+    )
+  }
+
+  const commandPayload =
+    payload as {
+      controlId?: unknown
+      sourceModuleId?: unknown
+      eventPayload?: unknown
+    }
+
+  if (
+    typeof commandPayload.controlId !==
+      'string' ||
+    !commandPayload.controlId
+  ) {
+    throw new Error(
+      'Equipment.ExecuteControl requires controlId.',
+    )
+  }
+
   const project =
     activeProjectRef.current
 
   const control =
     project?.controls.find(
       (candidate) =>
-        candidate.id === controlId,
+        candidate.id ===
+        commandPayload.controlId,
     )
 
   if (!control) {
-    console.error(
-      `[Equipment] Control "${controlId}" could not be found.`,
+    throw new Error(
+      `Control "${commandPayload.controlId}" could not be found.`,
     )
-
-    return
   }
 
+  const context:
+    EquipmentControlExecutionContext | undefined =
+      typeof commandPayload.sourceModuleId ===
+        'string'
+        ? {
+            sourceModuleId:
+              commandPayload.sourceModuleId,
+
+            payload:
+              commandPayload.eventPayload,
+          }
+        : undefined
+
   await executeControl(
-  control,
-  context,
-)
+    control,
+    context,
+  )
 }
 
 useEffect(() => {
-  return equipmentActionManager.start(
-    () => activeProjectRef.current,
-    executeControlById,
-  )
-})
+  const unregisterExecuteControl =
+    moduleEventBus
+      .registerRequestHandler(
+        'Equipment.ExecuteControl',
+        async (request) => {
+          await executeEquipmentCommand(
+            'Equipment.ExecuteControl',
+            request.payload,
+          )
+
+          return {
+            executed: true,
+          }
+        },
+      )
+
+  const stopReactions =
+    equipmentActionManager.start(
+      () =>
+        activeProjectRef.current,
+
+      executeEquipmentCommand,
+    )
+
+  return () => {
+    stopReactions()
+    unregisterExecuteControl()
+  }
+}, [])
 
   /*
    * ------------------------------------------------------

@@ -19,15 +19,10 @@ import {
 type ProjectProvider =
   () => EquipmentProject | null
 
-export interface EquipmentControlExecutionContext {
-  sourceModuleId: string
-  payload: unknown
-}
-
-type ControlExecutor =
+type CommandExecutor =
   (
-    controlId: string,
-    context: EquipmentControlExecutionContext,
+    commandId: string,
+    payload: unknown,
   ) => Promise<void>
 
 export class EquipmentActionManager {
@@ -35,50 +30,62 @@ export class EquipmentActionManager {
     ModuleEventBus
 
   private readonly eventSubscriptions =
-    new Map<string, () => void>()
+    new Map<
+      string,
+      () => void
+    >()
 
   private stopCatalogSubscription:
-    (() => void) | null = null
+    (() => void) | null =
+      null
 
   private getProject:
-    ProjectProvider = () => null
+    ProjectProvider =
+      () => null
 
-  private executeControl:
-    ControlExecutor =
+  private executeCommand:
+    CommandExecutor =
       async () => undefined
 
   constructor(
     eventBus: ModuleEventBus,
   ) {
-    this.eventBus = eventBus
+    this.eventBus =
+      eventBus
   }
 
   start(
-    getProject: ProjectProvider,
-    executeControl: ControlExecutor,
+    getProject:
+      ProjectProvider,
+
+    executeCommand:
+      CommandExecutor,
   ): () => void {
     this.stop()
 
     this.getProject =
       getProject
 
-    this.executeControl =
-      executeControl
+    this.executeCommand =
+      executeCommand
 
     this.stopCatalogSubscription =
-      this.eventBus.onCapabilitiesChanged(
-        (capabilities) =>
-          this.synchronizeSubscriptions(
-            capabilities.events,
-          ),
-      )
+      this.eventBus
+        .onCapabilitiesChanged(
+          (capabilities) =>
+            this.synchronizeSubscriptions(
+              capabilities.events,
+            ),
+        )
 
     this.synchronizeSubscriptions(
-      this.eventBus.getAvailableCapabilities()
+      this.eventBus
+        .getAvailableCapabilities()
         .events,
     )
 
-    return () => this.stop()
+    return () =>
+      this.stop()
   }
 
   stop(): void {
@@ -89,7 +96,8 @@ export class EquipmentActionManager {
 
     for (
       const unsubscribe
-      of this.eventSubscriptions.values()
+      of this.eventSubscriptions
+        .values()
     ) {
       unsubscribe()
     }
@@ -104,7 +112,8 @@ export class EquipmentActionManager {
     const availableIds =
       new Set(
         events.map(
-          (event) => event.id,
+          (event) =>
+            event.id,
         ),
       )
 
@@ -116,7 +125,9 @@ export class EquipmentActionManager {
       of this.eventSubscriptions
     ) {
       if (
-        availableIds.has(eventId)
+        availableIds.has(
+          eventId,
+        )
       ) {
         continue
       }
@@ -128,7 +139,10 @@ export class EquipmentActionManager {
       )
     }
 
-    for (const event of events) {
+    for (
+      const event
+      of events
+    ) {
       if (
         this.eventSubscriptions.has(
           event.id,
@@ -155,7 +169,8 @@ export class EquipmentActionManager {
   }
 
   private async handleEvent(
-    message: HostEventMessage,
+    message:
+      HostEventMessage,
   ): Promise<void> {
     const project =
       this.getProject()
@@ -191,22 +206,21 @@ export class EquipmentActionManager {
       }
     }
 
-    const context:
-      EquipmentControlExecutionContext = {
-        sourceModuleId:
-          message.sourceModuleId,
-
-        payload:
-          message.payload,
-      }
-
     for (
       const controlId
       of controlIds
     ) {
-      await this.executeControl(
-        controlId,
-        context,
+      await this.executeCommand(
+        'Equipment.ExecuteControl',
+        {
+          controlId,
+
+          sourceModuleId:
+            message.sourceModuleId,
+
+          eventPayload:
+            message.payload,
+        },
       )
     }
   }
