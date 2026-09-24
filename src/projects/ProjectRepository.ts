@@ -3,6 +3,10 @@ import type {
 } from '../models/Project'
 
 import {
+  normalizeEquipmentReaction,
+} from '../models/EquipmentReaction'
+
+import {
   hostedCollectionRepository,
 } from '../host/HostedCollectionRepository'
 
@@ -25,8 +29,10 @@ function normalizeProject(
     reactions:
       Array.isArray(
         project.reactions,
-      )
-        ? project.reactions
+    )
+        ? project.reactions.map(
+            normalizeEquipmentReaction,
+          )
         : [],
   }
 }

@@ -82,6 +82,36 @@ function cloneReaction(reaction: EquipmentReaction): EquipmentReaction {
   };
 }
 
+function uniqueEvents(
+  events: RegisteredEventDefinition[],
+): RegisteredEventDefinition[] {
+  const byId =
+    new Map<
+      string,
+      RegisteredEventDefinition
+    >()
+
+  for (
+    const event
+    of events
+  ) {
+    if (
+      !byId.has(
+        event.id,
+      )
+    ) {
+      byId.set(
+        event.id,
+        event,
+      )
+    }
+  }
+
+  return [
+    ...byId.values(),
+  ]
+}
+
 export default function ReactionsDialog({
   reactions,
   events,
@@ -91,8 +121,8 @@ export default function ReactionsDialog({
 }: ReactionsDialogProps) {
   const [draft, setDraft] = useState<EquipmentReaction | null>(null);
   const [error, setError] = useState('');
-
-  const selectedEvent = events.find((event) => {
+  const availableEvents = uniqueEvents(events)
+  const selectedEvent = availableEvents.find((event) => {
     return event.id === draft?.trigger.triggerEventId;
   });
 
@@ -102,7 +132,7 @@ export default function ReactionsDialog({
       id: reactionId,
       trigger: {
         id: crypto.randomUUID(),
-        triggerEventId: events[0]?.id ?? '',
+        triggerEventId: availableEvents[0]?.id ?? '',
         conditions: [],
       },
       effect: {
@@ -177,7 +207,7 @@ export default function ReactionsDialog({
     const control = controls.find((candidate) => {
       return candidate.id === reaction.effect.controlId;
     });
-    const event = events.find((candidate) => {
+    const event = availableEvents.find((candidate) => {
   return candidate.id === reaction.trigger.triggerEventId;
 });
 
@@ -297,7 +327,7 @@ const conditions = reaction.trigger.conditions.map((condition) => {
       },
     })}
   >
-    {!events.some((candidate) => {
+    {!availableEvents.some((candidate) => {
       return candidate.id === draft.trigger.triggerEventId;
     }) && draft.trigger.triggerEventId && (
       <option value={draft.trigger.triggerEventId}>
@@ -305,13 +335,13 @@ const conditions = reaction.trigger.conditions.map((condition) => {
       </option>
     )}
 
-    {events.length === 0 && (
+    {availableEvents.length === 0 && (
       <option value="">
         No Events Available
       </option>
     )}
 
-    {events.map((candidate) => (
+    {availableEvents.map((candidate) => (
       <option
         key={`${candidate.moduleId}:${candidate.id}`}
         value={candidate.id}
